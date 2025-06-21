@@ -664,17 +664,17 @@ export const MessageBubble = ({ message, isUser, currentUser }) => {
   };
 
   return (
-    <div className={`flex items-start space-x-3 ${isUser ? 'flex-row-reverse space-x-reverse' : ''} mb-6`}>
+    <div className={`flex items-start space-x-4 ${isUser ? 'flex-row-reverse space-x-reverse' : ''} mb-8`}>
       <div className="flex-shrink-0">
         <img
           src={isUser ? currentUser?.avatar : 'https://images.pexels.com/photos/8728386/pexels-photo-8728386.jpeg'}
           alt={isUser ? 'User' : 'AI'}
-          className="w-8 h-8 rounded-full object-cover"
+          className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-700"
         />
       </div>
       
-      <div className={`flex-1 max-w-3xl ${isUser ? 'text-right' : ''}`}>
-        <div className="flex items-center space-x-2 mb-1">
+      <div className={`flex-1 max-w-4xl ${isUser ? 'text-right' : ''}`}>
+        <div className={`flex items-center space-x-2 mb-2 ${isUser ? 'justify-end' : ''}`}>
           <span className="text-sm font-medium text-gray-300">
             {isUser ? 'You' : `MIND14 ${message.model ? `(${message.model})` : ''}`}
           </span>
@@ -683,15 +683,15 @@ export const MessageBubble = ({ message, isUser, currentUser }) => {
           </span>
         </div>
         
-        <div className={`inline-block px-4 py-3 rounded-2xl max-w-full ${
+        <div className={`inline-block max-w-full ${
           isUser 
-            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
-            : 'bg-gray-800 text-gray-100 border border-gray-700'
+            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-3xl rounded-tr-lg px-6 py-4' 
+            : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-3xl rounded-tl-lg px-6 py-4'
         }`}>
           {message.attachments && message.attachments.length > 0 && (
-            <div className="mb-2 space-y-1">
+            <div className="mb-3 space-y-2">
               {message.attachments.map((file, index) => (
-                <div key={index} className="flex items-center space-x-2 text-sm">
+                <div key={index} className="flex items-center space-x-2 text-sm opacity-90">
                   <Icons.Paperclip className="w-3 h-3" />
                   <span>{file.name}</span>
                 </div>
@@ -700,7 +700,7 @@ export const MessageBubble = ({ message, isUser, currentUser }) => {
           )}
           
           <div 
-            className="whitespace-pre-wrap"
+            className="whitespace-pre-wrap leading-relaxed"
             dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
           />
         </div>
