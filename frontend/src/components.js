@@ -674,7 +674,7 @@ export const MessageBubble = ({ message, isUser, currentUser }) => {
       </div>
       
       <div className={`flex-1 max-w-4xl ${isUser ? 'text-right' : ''}`}>
-        <div className={`flex items-center space-x-2 mb-2 ${isUser ? 'justify-end' : ''}`}>
+        <div className={`flex items-center space-x-2 mb-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
           <span className="text-sm font-medium text-gray-300">
             {isUser ? 'You' : `MIND14 ${message.model ? `(${message.model})` : ''}`}
           </span>
@@ -683,26 +683,28 @@ export const MessageBubble = ({ message, isUser, currentUser }) => {
           </span>
         </div>
         
-        <div className={`inline-block max-w-full ${
-          isUser 
-            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-3xl rounded-tr-lg px-6 py-4' 
-            : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-3xl rounded-tl-lg px-6 py-4'
-        }`}>
-          {message.attachments && message.attachments.length > 0 && (
-            <div className="mb-3 space-y-2">
-              {message.attachments.map((file, index) => (
-                <div key={index} className="flex items-center space-x-2 text-sm opacity-90">
-                  <Icons.Paperclip className="w-3 h-3" />
-                  <span>{file.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          <div 
-            className="whitespace-pre-wrap leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
-          />
+        <div className={`${isUser ? 'flex justify-end' : 'flex justify-start'}`}>
+          <div className={`max-w-full ${
+            isUser 
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-3xl rounded-tr-lg px-6 py-4' 
+              : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-3xl rounded-tl-lg px-6 py-4'
+          }`}>
+            {message.attachments && message.attachments.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {message.attachments.map((file, index) => (
+                  <div key={index} className="flex items-center space-x-2 text-sm opacity-90">
+                    <Icons.Paperclip className="w-3 h-3" />
+                    <span>{file.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div 
+              className={`whitespace-pre-wrap leading-relaxed ${isUser ? 'text-right' : 'text-left'}`}
+              dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
+            />
+          </div>
         </div>
       </div>
     </div>
