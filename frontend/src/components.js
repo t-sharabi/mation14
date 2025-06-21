@@ -1034,13 +1034,6 @@ export const ChatInterface = ({
           <FilePreview files={attachments} onRemoveFile={removeAttachment} />
 
           <div className="relative">
-            {/* File Upload (Expandable) */}
-            <FileUpload 
-              onFileSelect={handleFileSelect}
-              showExpanded={showFileUpload}
-              onToggleExpanded={setShowFileUpload}
-            />
-
             <div className="flex items-end space-x-3">
               <div className="flex-1 relative">
                 <textarea
@@ -1049,7 +1042,7 @@ export const ChatInterface = ({
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Type your message..."
-                  className="w-full pl-4 pr-24 py-3 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none min-h-[50px] max-h-32"
+                  className="w-full pl-4 pr-16 py-3 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none min-h-[50px] max-h-32"
                   rows={1}
                   style={{ height: 'auto' }}
                   onInput={(e) => {
@@ -1061,7 +1054,7 @@ export const ChatInterface = ({
                 {/* Attachment Icon Inside Input */}
                 <button
                   onClick={() => setShowFileUpload(!showFileUpload)}
-                  className={`absolute right-12 bottom-3 p-2 rounded-lg transition-colors ${
+                  className={`absolute right-3 bottom-3 p-2 rounded-lg transition-colors ${
                     showFileUpload || attachments.length > 0
                       ? 'text-purple-400 bg-purple-400/10' 
                       : 'text-gray-400 hover:text-purple-400 hover:bg-gray-700'
@@ -1082,6 +1075,56 @@ export const ChatInterface = ({
                 <Icons.Send />
               </button>
             </div>
+            
+            {/* File Upload (Expandable) - Only show when expanded */}
+            {showFileUpload && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-300">Attach Files</span>
+                  <button
+                    onClick={() => setShowFileUpload(false)}
+                    className="text-gray-400 hover:text-gray-300"
+                  >
+                    <Icons.X />
+                  </button>
+                </div>
+                
+                <div
+                  className="border-2 border-dashed rounded-lg p-4 text-center transition-colors border-gray-600 hover:border-gray-500"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const files = Array.from(e.dataTransfer.files);
+                    handleFileSelect(files);
+                  }}
+                >
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => handleFileSelect(Array.from(e.target.files))}
+                    className="hidden"
+                    accept=".txt,.md,.json,.js,.ts,.png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.csv"
+                    id="file-upload"
+                  />
+                  
+                  <div className="space-y-2">
+                    <Icons.Paperclip className="mx-auto text-gray-400" />
+                    <p className="text-gray-400 text-sm">
+                      <label
+                        htmlFor="file-upload"
+                        className="text-purple-400 hover:text-purple-300 underline cursor-pointer"
+                      >
+                        Click to upload
+                      </label>
+                      {' '}or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Supports: Text, Images, Documents
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="mt-2 text-xs text-gray-500 text-center">
