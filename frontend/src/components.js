@@ -761,7 +761,7 @@ export const Sidebar = ({
         <button
           onClick={onNewConversation}
           className={`w-full flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-colors ${
-            collapsed ? 'justify-center' : ''
+            collapsed ? 'justify-center' : 'justify-start'
           }`}
         >
           <Icons.Plus />
@@ -770,12 +770,12 @@ export const Sidebar = ({
       </div>
 
       {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto px-4">
-        <div className="space-y-2">
+      <div className="flex-1 overflow-y-auto px-3">
+        <div className="space-y-1">
           {conversations.map((conversation) => (
             <div
               key={conversation.id}
-              className={`group relative flex items-center space-x-3 px-3 py-3 rounded-lg cursor-pointer transition-colors ${
+              className={`group relative flex items-center px-3 py-3 rounded-lg cursor-pointer transition-colors ${
                 activeConversationId === conversation.id
                   ? 'bg-gray-800 text-white'
                   : 'hover:bg-gray-800 text-gray-300 hover:text-white'
@@ -788,9 +788,11 @@ export const Sidebar = ({
                 </div>
               ) : (
                 <>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium truncate">{conversation.title}</h3>
-                    <p className="text-xs text-gray-500 truncate">
+                  <div className="flex-1 min-w-0 text-left">
+                    <h3 className="text-sm font-medium truncate text-left leading-5 mb-1">
+                      {conversation.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate text-left leading-4">
                       {conversation.messages.length} messages • {conversation.model}
                     </p>
                   </div>
@@ -799,7 +801,7 @@ export const Sidebar = ({
                       e.stopPropagation();
                       onDeleteConversation(conversation.id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-700 rounded transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-700 rounded transition-all flex-shrink-0 ml-2"
                   >
                     <Icons.Trash />
                   </button>
@@ -811,26 +813,32 @@ export const Sidebar = ({
       </div>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-gray-800">
-        <div className={`flex items-center space-x-3 ${collapsed ? 'justify-center' : ''}`}>
+      <div className="p-3 border-t border-gray-800">
+        <div className={`${collapsed ? 'flex justify-center' : ''}`}>
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-lg transition-colors w-full text-left"
+              className={`flex items-center p-2 hover:bg-gray-800 rounded-lg transition-colors w-full ${
+                collapsed ? 'justify-center' : 'justify-start text-left'
+              }`}
             >
               <img
                 src={currentUser?.avatar}
                 alt="Profile"
-                className="w-8 h-8 rounded-full object-cover"
+                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
               />
               {!collapsed && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{currentUser?.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{currentUser?.email}</p>
+                <div className="flex-1 min-w-0 ml-3 text-left">
+                  <p className="text-sm font-medium text-white truncate text-left">
+                    {currentUser?.name}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate text-left">
+                    {currentUser?.email}
+                  </p>
                 </div>
               )}
               {!collapsed && (
-                <Icons.Settings className="text-gray-400" />
+                <Icons.Settings className="text-gray-400 flex-shrink-0 ml-2" />
               )}
             </button>
             
@@ -844,7 +852,7 @@ export const Sidebar = ({
                       // Add settings functionality here
                       alert('Settings panel coming soon!');
                     }}
-                    className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-gray-700 rounded-lg transition-colors text-gray-300 hover:text-white"
+                    className="flex items-center space-x-3 w-full px-3 py-2 text-left hover:bg-gray-700 rounded-lg transition-colors text-gray-300 hover:text-white"
                   >
                     <Icons.Settings />
                     <span className="text-sm">Settings</span>
@@ -854,7 +862,7 @@ export const Sidebar = ({
                       setShowUserMenu(false);
                       onLogout();
                     }}
-                    className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-gray-700 rounded-lg transition-colors text-gray-300 hover:text-white"
+                    className="flex items-center space-x-3 w-full px-3 py-2 text-left hover:bg-gray-700 rounded-lg transition-colors text-gray-300 hover:text-white"
                   >
                     <Icons.LogOut />
                     <span className="text-sm">Sign out</span>
