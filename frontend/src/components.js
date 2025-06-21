@@ -954,23 +954,41 @@ export const ChatInterface = ({
         {!conversation ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="max-w-md space-y-6">
-              <img
-                src="https://images.unsplash.com/photo-1639759032532-c7f288e9ef4f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwyfHxjaGF0JTIwaW50ZXJmYWNlfGVufDB8fHxwdXJwbGV8MTc1MDUwNTU3MXww&ixlib=rb-4.1.0&q=85"
-                alt="MIND14 Chat"
-                className="w-32 h-32 mx-auto rounded-2xl object-cover opacity-50"
-              />
+              {/* MIND14 Logo Hero */}
+              <div className="relative">
+                <div className="w-32 h-32 mx-auto bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-3xl backdrop-blur-sm border border-purple-500/20 flex items-center justify-center">
+                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
+                    <div className="w-12 h-12 relative">
+                      <div className="absolute top-1 left-3 w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      <div className="absolute bottom-1 right-3 w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                      <div className="absolute top-3 right-1 w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+                      <div className="absolute bottom-3 left-1 w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+                      <div className="absolute top-2 left-6 w-0.5 h-8 bg-white rounded rotate-45 opacity-80"></div>
+                      <div className="absolute top-2 right-6 w-0.5 h-8 bg-white rounded -rotate-45 opacity-80"></div>
+                    </div>
+                  </div>
+                </div>
+                {/* Animated background elements */}
+                <div className="absolute inset-0 -z-10">
+                  <div className="absolute top-4 left-4 w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                  <div className="absolute top-8 right-8 w-1 h-1 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                  <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-purple-300 rounded-full animate-bounce" style={{ animationDelay: '0.6s' }}></div>
+                  <div className="absolute bottom-4 right-4 w-1 h-1 bg-pink-300 rounded-full animate-bounce" style={{ animationDelay: '0.9s' }}></div>
+                </div>
+              </div>
+              
               <div className="space-y-4">
-                <h3 className="text-2xl font-bold text-white">Welcome to MIND14</h3>
-                <p className="text-gray-400">
-                  Your AI-powered chat assistant. Start a conversation by typing a message below
-                  or create a new chat to begin.
+                <h3 className="text-3xl font-bold text-white">Welcome to MIND14</h3>
+                <p className="text-gray-400 leading-relaxed">
+                  Your AI-powered chat assistant with advanced reasoning capabilities. 
+                  Choose your model, start a conversation, and experience the future of AI interaction.
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {['Ask about coding', 'Data analysis help', 'Creative writing', 'General questions'].map((suggestion) => (
                     <button
                       key={suggestion}
                       onClick={() => setMessage(suggestion)}
-                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-full text-sm transition-colors"
+                      className="px-4 py-2 bg-gray-800 hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 text-gray-300 hover:text-white rounded-full text-sm transition-all duration-200 transform hover:scale-105"
                     >
                       {suggestion}
                     </button>
