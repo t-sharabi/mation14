@@ -890,6 +890,7 @@ export const ChatInterface = ({
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -908,6 +909,7 @@ export const ChatInterface = ({
     await onSendMessage(message, attachments);
     setMessage('');
     setAttachments([]);
+    setShowFileUpload(false);
     setIsLoading(false);
   };
 
@@ -920,6 +922,7 @@ export const ChatInterface = ({
 
   const handleFileSelect = (files) => {
     setAttachments(prev => [...prev, ...files]);
+    setShowFileUpload(false);
   };
 
   const removeAttachment = (index) => {
@@ -1027,37 +1030,26 @@ export const ChatInterface = ({
       {/* Input Area */}
       <div className="border-t border-gray-800 p-4">
         <div className="max-w-4xl mx-auto">
-          {/* Attachments Preview */}
-          {attachments.length > 0 && (
-            <div className="mb-4 flex flex-wrap gap-2">
-              {attachments.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center space-x-2 bg-gray-800 px-3 py-2 rounded-lg text-sm"
-                >
-                  <Icons.Paperclip className="w-3 h-3 text-gray-400" />
-                  <span className="text-gray-300">{file.name}</span>
-                  <button
-                    onClick={() => removeAttachment(index)}
-                    className="text-gray-400 hover:text-red-400 ml-2"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* File Previews */}
+          <FilePreview files={attachments} onRemoveFile={removeAttachment} />
 
-          <div className="flex items-end space-x-4">
-            <div className="flex-1">
-              <div className="relative">
+          <div className="relative">
+            {/* File Upload (Expandable) */}
+            <FileUpload 
+              onFileSelect={handleFileSelect}
+              showExpanded={showFileUpload}
+              onToggleExpanded={setShowFileUpload}
+            />
+
+            <div className="flex items-end space-x-3">
+              <div className="flex-1 relative">
                 <textarea
                   ref={textareaRef}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Type your message..."
-                  className="w-full px-4 py-3 pr-12 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none min-h-[50px] max-h-32"
+                  className="w-full pl-4 pr-24 py-3 bg-gray-800 border border-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none min-h-[50px] max-h-32"
                   rows={1}
                   style={{ height: 'auto' }}
                   onInput={(e) => {
@@ -1066,17 +1058,29 @@ export const ChatInterface = ({
                   }}
                 />
                 
-                <div className="absolute right-3 bottom-3 flex items-center space-x-2">
-                  <FileUpload onFileSelect={handleFileSelect} />
-                  <button
-                    onClick={handleSend}
-                    disabled={(!message.trim() && attachments.length === 0) || isLoading}
-                    className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-full transition-colors disabled:cursor-not-allowed"
-                  >
-                    <Icons.Send />
-                  </button>
-                </div>
+                {/* Attachment Icon Inside Input */}
+                <button
+                  onClick={() => setShowFileUpload(!showFileUpload)}
+                  className={`absolute right-12 bottom-3 p-2 rounded-lg transition-colors ${
+                    showFileUpload || attachments.length > 0
+                      ? 'text-purple-400 bg-purple-400/10' 
+                      : 'text-gray-400 hover:text-purple-400 hover:bg-gray-700'
+                  }`}
+                  title="Attach files"
+                >
+                  <Icons.Paperclip />
+                </button>
               </div>
+              
+              {/* Always Visible Send Button */}
+              <button
+                onClick={handleSend}
+                disabled={(!message.trim() && attachments.length === 0) || isLoading}
+                className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none flex-shrink-0"
+                title="Send message"
+              >
+                <Icons.Send />
+              </button>
             </div>
           </div>
           
