@@ -60,14 +60,94 @@ export const LoadingDots = () => (
 
 // Login Form Component
 export const LoginForm = ({ onLogin }) => {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [step, setStep] = useState('form'); // 'form', 'otp', 'success'
+  
+  // Sign In Form
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Sign Up Form
+  const [fullName, setFullName] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [signUpPassword, setSignUpPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // OTP
+  const [otp, setOtp] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSignIn = (e) => {
     e.preventDefault();
     if (email && password) {
       onLogin({ email, password });
     }
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    if (!fullName || !signUpEmail || !phoneNumber || !signUpPassword || !confirmPassword) {
+      alert('Please fill in all fields');
+      return;
+    }
+    
+    if (signUpPassword !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    if (phoneNumber.length < 10) {
+      alert('Please enter a valid phone number');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Simulate sending OTP
+    setTimeout(() => {
+      setIsLoading(false);
+      setStep('otp');
+    }, 2000);
+  };
+
+  const handleOtpVerification = (e) => {
+    e.preventDefault();
+    if (otp.length !== 6) {
+      alert('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Simulate OTP verification
+    setTimeout(() => {
+      setIsLoading(false);
+      if (otp === '123456') {
+        setStep('success');
+        // Auto login after successful signup
+        setTimeout(() => {
+          onLogin({ 
+            email: signUpEmail, 
+            password: signUpPassword,
+            fullName: fullName,
+            phoneNumber: phoneNumber 
+          });
+        }, 2000);
+      } else {
+        alert('Invalid OTP. Please try 123456 for demo');
+      }
+    }, 1500);
+  };
+
+  const resetForm = () => {
+    setStep('form');
+    setFullName('');
+    setSignUpEmail('');
+    setPhoneNumber('');
+    setSignUpPassword('');
+    setConfirmPassword('');
+    setOtp('');
   };
 
   return (
@@ -94,57 +174,260 @@ export const LoginForm = ({ onLogin }) => {
               </h1>
             </div>
           </div>
-          <h2 className="text-3xl font-bold text-white">Welcome back</h2>
-          <p className="mt-2 text-gray-400">Sign in to your account</p>
+          
+          {step === 'form' && (
+            <>
+              <h2 className="text-3xl font-bold text-white">
+                {isSignUp ? 'Create your account' : 'Welcome back'}
+              </h2>
+              <p className="mt-2 text-gray-400">
+                {isSignUp ? 'Sign up to get started' : 'Sign in to your account'}
+              </p>
+            </>
+          )}
+          
+          {step === 'otp' && (
+            <>
+              <h2 className="text-3xl font-bold text-white">Verify your phone</h2>
+              <p className="mt-2 text-gray-400">
+                We sent a 6-digit code to {phoneNumber}
+              </p>
+            </>
+          )}
+          
+          {step === 'success' && (
+            <>
+              <h2 className="text-3xl font-bold text-white">Account created!</h2>
+              <p className="mt-2 text-gray-400">
+                Welcome to MIND14, {fullName}
+              </p>
+            </>
+          )}
         </div>
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+        {step === 'form' && !isSignUp && (
+          <form className="mt-8 space-y-6" onSubmit={handleSignIn}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="sr-only">Email address</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="sr-only">Password</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-200"
-            >
-              Sign in
-            </button>
-          </div>
-          
-          <div className="text-center">
-            <p className="text-sm text-gray-400">
-              Demo: Use any email and password to sign in
+            <div>
+              <button
+                type="submit"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-200"
+              >
+                Sign in
+              </button>
+            </div>
+            
+            <div className="text-center space-y-2">
+              <p className="text-sm text-gray-400">
+                📧 Demo: Use any email and password to sign in
+              </p>
+              <p className="text-sm text-gray-400">
+                Don't have an account?{' '}
+                <button
+                  onClick={() => setIsSignUp(true)}
+                  className="text-purple-400 hover:text-purple-300 underline"
+                >
+                  Sign up
+                </button>
+              </p>
+            </div>
+          </form>
+        )}
+
+        {step === 'form' && isSignUp && (
+          <form className="mt-8 space-y-6" onSubmit={handleSignUp}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="fullName" className="sr-only">Full Name</label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="signUpEmail" className="sr-only">Email address</label>
+                <input
+                  id="signUpEmail"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Email address"
+                  value={signUpEmail}
+                  onChange={(e) => setSignUpEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="phoneNumber" className="sr-only">Phone Number</label>
+                <input
+                  id="phoneNumber"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Phone Number (+1234567890)"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="signUpPassword" className="sr-only">Password</label>
+                <input
+                  id="signUpPassword"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Password"
+                  value={signUpPassword}
+                  onChange={(e) => setSignUpPassword(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-200 disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <LoadingDots />
+                ) : (
+                  'Create Account & Send OTP'
+                )}
+              </button>
+            </div>
+            
+            <div className="text-center">
+              <p className="text-sm text-gray-400">
+                Already have an account?{' '}
+                <button
+                  onClick={() => setIsSignUp(false)}
+                  className="text-purple-400 hover:text-purple-300 underline"
+                >
+                  Sign in
+                </button>
+              </p>
+            </div>
+          </form>
+        )}
+
+        {step === 'otp' && (
+          <form className="mt-8 space-y-6" onSubmit={handleOtpVerification}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="otp" className="sr-only">OTP Code</label>
+                <input
+                  id="otp"
+                  name="otp"
+                  type="text"
+                  maxLength="6"
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center text-2xl tracking-widest"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                type="submit"
+                disabled={isLoading || otp.length !== 6}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-200 disabled:opacity-50"
+              >
+                {isLoading ? <LoadingDots /> : 'Verify OTP'}
+              </button>
+              
+              <button
+                type="button"
+                onClick={resetForm}
+                className="w-full text-sm text-gray-400 hover:text-gray-300 underline"
+              >
+                Back to sign up
+              </button>
+            </div>
+            
+            <div className="text-center space-y-2">
+              <p className="text-sm text-gray-400">
+                📱 Demo: Use OTP code <span className="font-mono text-purple-400">123456</span>
+              </p>
+              <p className="text-xs text-gray-500">
+                Didn't receive the code? Check your phone or try again
+              </p>
+            </div>
+          </form>
+        )}
+
+        {step === 'success' && (
+          <div className="mt-8 text-center space-y-6">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-gray-400">
+              Your account has been created successfully. Redirecting to MIND14...
             </p>
+            <LoadingDots />
           </div>
-        </form>
+        )}
       </div>
     </div>
   );
