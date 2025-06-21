@@ -493,8 +493,8 @@ export const ModelSelector = ({ selectedModel, onModelChange, availableModels })
   );
 };
 
-// File Upload Component
-export const FileUpload = ({ onFileSelect }) => {
+// File Upload Component (Compact version)
+export const FileUpload = ({ onFileSelect, showExpanded, onToggleExpanded }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -520,41 +520,128 @@ export const FileUpload = ({ onFileSelect }) => {
     onFileSelect(files);
   };
 
+  if (!showExpanded) {
+    return (
+      <button
+        onClick={() => {
+          onToggleExpanded(true);
+          setTimeout(() => fileInputRef.current?.click(), 100);
+        }}
+        className="p-2 text-gray-400 hover:text-purple-400 hover:bg-gray-800 rounded-lg transition-colors"
+        title="Attach files"
+      >
+        <Icons.Paperclip />
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileInput}
+          className="hidden"
+          accept=".txt,.md,.json,.js,.ts,.png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.csv"
+        />
+      </button>
+    );
+  }
+
   return (
-    <div
-      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-        isDragging 
-          ? 'border-purple-500 bg-purple-500/10' 
-          : 'border-gray-600 hover:border-gray-500'
-      }`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        onChange={handleFileInput}
-        className="hidden"
-        accept=".txt,.md,.json,.js,.ts,.png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.csv"
-      />
-      
-      <div className="space-y-2">
-        <Icons.Paperclip className="mx-auto text-gray-400" />
-        <p className="text-gray-400">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="text-purple-400 hover:text-purple-300 underline"
-          >
-            Click to upload
-          </button>
-          {' '}or drag and drop
-        </p>
-        <p className="text-xs text-gray-500">
-          Supports: Text, Images, Documents
-        </p>
+    <div className="absolute bottom-full left-0 right-0 mb-2 p-4 bg-gray-800 rounded-lg border border-gray-700">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-gray-300">Attach Files</span>
+        <button
+          onClick={() => onToggleExpanded(false)}
+          className="text-gray-400 hover:text-gray-300"
+        >
+          <Icons.X />
+        </button>
       </div>
+      
+      <div
+        className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+          isDragging 
+            ? 'border-purple-500 bg-purple-500/10' 
+            : 'border-gray-600 hover:border-gray-500'
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileInput}
+          className="hidden"
+          accept=".txt,.md,.json,.js,.ts,.png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.csv"
+        />
+        
+        <div className="space-y-2">
+          <Icons.Paperclip className="mx-auto text-gray-400" />
+          <p className="text-gray-400 text-sm">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="text-purple-400 hover:text-purple-300 underline"
+            >
+              Click to upload
+            </button>
+            {' '}or drag and drop
+          </p>
+          <p className="text-xs text-gray-500">
+            Supports: Text, Images, Documents
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// File Preview Component
+export const FilePreview = ({ files, onRemoveFile }) => {
+  const getFileIcon = (file) => {
+    if (file.type.startsWith('image/')) return <Icons.Image />;
+    return <Icons.Document />;
+  };
+
+  const getFilePreview = (file) => {
+    if (file.type.startsWith('image/')) {
+      return (
+        <img
+          src={URL.createObjectURL(file)}
+          alt={file.name}
+          className="w-12 h-12 object-cover rounded"
+        />
+      );
+    }
+    return (
+      <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center">
+        {getFileIcon(file)}
+      </div>
+    );
+  };
+
+  if (!files.length) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-3">
+      {files.map((file, index) => (
+        <div
+          key={index}
+          className="flex items-center space-x-2 bg-gray-800 p-2 rounded-lg border border-gray-700 max-w-xs"
+        >
+          {getFilePreview(file)}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-gray-300 truncate">{file.name}</p>
+            <p className="text-xs text-gray-500">
+              {(file.size / 1024).toFixed(1)} KB
+            </p>
+          </div>
+          <button
+            onClick={() => onRemoveFile(index)}
+            className="text-gray-400 hover:text-red-400 p-1"
+          >
+            <Icons.X />
+          </button>
+        </div>
+      ))}
     </div>
   );
 };
