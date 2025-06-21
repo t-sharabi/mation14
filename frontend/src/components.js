@@ -721,6 +721,8 @@ export const Sidebar = ({
   collapsed,
   onToggleCollapse
 }) => {
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
   return (
     <div className={`bg-gray-950 border-r border-gray-800 flex flex-col transition-all duration-300 ${
       collapsed ? 'w-16' : 'w-80'
@@ -809,24 +811,66 @@ export const Sidebar = ({
       {/* User Profile */}
       <div className="p-4 border-t border-gray-800">
         <div className={`flex items-center space-x-3 ${collapsed ? 'justify-center' : ''}`}>
-          <img
-            src={currentUser?.avatar}
-            alt="Profile"
-            className="w-8 h-8 rounded-full object-cover"
-          />
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{currentUser?.name}</p>
-              <p className="text-xs text-gray-500 truncate">{currentUser?.email}</p>
-            </div>
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-lg transition-colors w-full text-left"
+            >
+              <img
+                src={currentUser?.avatar}
+                alt="Profile"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">{currentUser?.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{currentUser?.email}</p>
+                </div>
+              )}
+              {!collapsed && (
+                <Icons.Settings className="text-gray-400" />
+              )}
+            </button>
+            
+            {/* User Menu Dropdown */}
+            {showUserMenu && !collapsed && (
+              <div className="absolute bottom-full left-0 mb-2 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+                <div className="p-2">
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      // Add settings functionality here
+                      alert('Settings panel coming soon!');
+                    }}
+                    className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-gray-700 rounded-lg transition-colors text-gray-300 hover:text-white"
+                  >
+                    <Icons.Settings />
+                    <span className="text-sm">Settings</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      onLogout();
+                    }}
+                    className="flex items-center space-x-2 w-full px-3 py-2 text-left hover:bg-gray-700 rounded-lg transition-colors text-gray-300 hover:text-white"
+                  >
+                    <Icons.LogOut />
+                    <span className="text-sm">Sign out</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {collapsed && (
+            <button
+              onClick={onLogout}
+              className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-white"
+              title="Logout"
+            >
+              <Icons.LogOut />
+            </button>
           )}
-          <button
-            onClick={onLogout}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-white"
-            title="Logout"
-          >
-            <Icons.LogOut />
-          </button>
         </div>
       </div>
     </div>
