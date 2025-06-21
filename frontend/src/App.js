@@ -110,9 +110,10 @@ function App() {
     // Mock login - accept any credentials
     const user = {
       id: '1',
-      name: credentials.email.split('@')[0],
+      name: credentials.fullName || credentials.email.split('@')[0],
       email: credentials.email,
-      avatar: 'https://images.pexels.com/photos/7658539/pexels-photo-7658539.jpeg'
+      avatar: 'https://images.pexels.com/photos/7658539/pexels-photo-7658539.jpeg',
+      phoneNumber: credentials.phoneNumber || null
     };
     setCurrentUser(user);
     setIsAuthenticated(true);
