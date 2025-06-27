@@ -223,7 +223,7 @@ function App() {
   };
 
   const sendMessage = async (content, attachments = []) => {
-    if (!activeConversationId) {
+    if (!activeConversationId && !content.trim()) {
       createNewConversation();
       return;
     }
@@ -237,56 +237,105 @@ function App() {
       language: currentLanguage
     };
 
-    // Add user message
+    // Add user message to local state immediately
     setConversations(prev => prev.map(conv => 
       conv.id === activeConversationId 
         ? { ...conv, messages: [...conv.messages, userMessage] }
         : conv
     ));
 
-    // Process with AI (simulate Mistral intent detection)
-    setTimeout(async () => {
-      const response = await processWithMistral(content, sessionData, currentLanguage);
+    try {
+      // Call the real backend API
+      const response = await fetch(`${API}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: content,
+          conversation_id: activeConversationId,
+          language: currentLanguage,
+          attachments: attachments.map(file => file.name || file)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const aiResponse = await response.json();
       
       const aiMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response.message,
+        content: aiResponse.message,
         timestamp: new Date(),
-        intent: response.intent,
-        confidence: response.confidence,
-        language: currentLanguage,
-        actions: response.actions || []
+        intent: aiResponse.intent,
+        confidence: aiResponse.confidence,
+        language: currentLanguage
       };
 
+      // Update conversation with AI response
       setConversations(prev => prev.map(conv => 
-        conv.id === activeConversationId 
+        conv.id === aiResponse.conversation_id
           ? { 
               ...conv, 
-              messages: [...conv.messages, aiMessage],
-              type: response.intent || conv.type,
-              service: response.service || conv.service
+              messages: conv.id === activeConversationId 
+                ? [...conv.messages, aiMessage]
+                : [...conv.messages, userMessage, aiMessage],
+              type: aiResponse.intent || conv.type,
+              service: aiResponse.session_data?.selected_service || conv.service
             }
           : conv
       ));
 
       // Update session data
-      setSessionData(response.sessionData);
+      setSessionData(aiResponse.session_data);
 
-      // Update conversation title
-      if (response.title) {
+      // Update active conversation ID if it was a new conversation
+      if (!activeConversationId) {
+        setActiveConversationId(aiResponse.conversation_id);
+      }
+
+      // Update conversation title if it's the first message
+      if (aiResponse.session_data?.step === 'service_selection' || aiResponse.intent !== 'general_inquiry') {
+        const titleUpdate = aiResponse.intent === 'health_card_renewal' 
+          ? { en: 'Health Card Renewal', ar: 'تجديد البطاقة الصحية' }
+          : aiResponse.intent === 'id_card_replacement'
+          ? { en: 'ID Card Replacement', ar: 'استبدال بطاقة الهوية' }
+          : aiResponse.intent === 'medical_consultation'
+          ? { en: 'Medical Consultation', ar: 'استشارة طبية' }
+          : aiResponse.intent === 'student_enrollment'
+          ? { en: 'Student Enrollment', ar: 'تسجيل الطلاب' }
+          : { en: content.slice(0, 30) + (content.length > 30 ? '...' : ''), ar: content.slice(0, 30) + (content.length > 30 ? '...' : '') };
+
         setConversations(prev => prev.map(conv => 
-          conv.id === activeConversationId
-            ? { ...conv, title: response.title }
+          conv.id === aiResponse.conversation_id
+            ? { ...conv, title: titleUpdate }
             : conv
         ));
       }
 
-      // Trigger n8n webhook if booking is completed
-      if (response.triggerWebhook && response.bookingData) {
-        await triggerN8nWebhook(response.bookingData);
-      }
-    }, 1000 + Math.random() * 2000);
+    } catch (error) {
+      console.error('Error calling backend API:', error);
+      
+      // Fallback to mock response if backend fails
+      const fallbackMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: currentLanguage === 'ar' 
+          ? 'عذراً، أواجه مشكلة في الاتصال. يرجى المحاولة مرة أخرى.'
+          : 'Sorry, I\'m having connection issues. Please try again.',
+        timestamp: new Date(),
+        language: currentLanguage
+      };
+
+      setConversations(prev => prev.map(conv => 
+        conv.id === activeConversationId 
+          ? { ...conv, messages: [...conv.messages, fallbackMessage] }
+          : conv
+      ));
+    }
   };
 
   // Simulate Mistral 7B intent detection and response generation
