@@ -430,6 +430,13 @@ function App() {
                     language={currentLanguage}
                     onLanguageChange={handleLanguageChange}
                   />
+                ) : currentView === 'management' && (currentUser?.role === 'admin' || currentUser?.role === 'manager') ? (
+                  <ManagementDashboard
+                    conversations={conversations}
+                    services={availableServices}
+                    language={currentLanguage}
+                    onLanguageChange={handleLanguageChange}
+                  />
                 ) : (
                   <VirtualDeskInterface
                     conversation={conversations.find(conv => conv.id === activeConversationId)}
