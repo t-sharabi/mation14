@@ -1217,6 +1217,13 @@ export const VirtualDeskInterface = ({
           
           <div className="mt-2 text-xs text-gray-500 text-center">
             {currentText.disclaimer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Export placeholders for unused original components
 export const ModelSelector = () => null;
 export const FileUpload = () => null;
