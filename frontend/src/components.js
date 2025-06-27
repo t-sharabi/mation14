@@ -1218,7 +1218,7 @@ export const VirtualDeskInterface = ({
           <div className="mt-2 text-xs text-gray-500 text-center">
             {currentText.disclaimer}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
