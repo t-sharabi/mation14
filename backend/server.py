@@ -410,30 +410,259 @@ Analyze the user's message and return the result in JSON format:
         
         return entities
 
-    async def generate_response(self, user_input: str, session_data: SessionData, language: str = "en") -> Dict[str, Any]:
+    async def generate_response(self, user_input: str, session_data: SessionData, intent_result: Dict, language: str = "en") -> Dict[str, Any]:
         """Generate AI response based on conversation context"""
         try:
-            system_prompt = self._get_response_generation_prompt(session_data, language)
-            user_prompt = f"User input: {user_input}"
-            
-            response = await asyncio.to_thread(
-                ollama.generate,
-                model=self.model_name,
-                prompt=f"{system_prompt}\n\n{user_prompt}",
-                stream=False
-            )
-            
-            return {
-                "message": response['response'].strip(),
-                "session_data": session_data
-            }
+            # Try Mistral first, fall back to rule-based
+            if await self.ensure_model_available():
+                return await self._generate_with_mistral(user_input, session_data, language)
+            else:
+                return self._generate_with_rules(user_input, session_data, intent_result, language)
             
         except Exception as e:
             logger.error(f"Error generating response: {e}")
+            fallback_message = "I apologize, but I'm having trouble processing your request. Please try again." if language == "en" else "أعتذر، أواجه مشكلة في معالجة طلبك. يرجى المحاولة مرة أخرى."
             return {
-                "message": "I apologize, but I'm having trouble processing your request. Please try again.",
+                "message": fallback_message,
                 "session_data": session_data
             }
+
+    async def _generate_with_mistral(self, user_input: str, session_data: SessionData, language: str) -> Dict[str, Any]:
+        """Generate response using Mistral model"""
+        system_prompt = self._get_response_generation_prompt(session_data, language)
+        user_prompt = f"User input: {user_input}"
+        
+        response = await asyncio.to_thread(
+            ollama.generate,
+            model=self.model_name,
+            prompt=f"{system_prompt}\n\n{user_prompt}",
+            stream=False
+        )
+        
+        return {
+            "message": response['response'].strip(),
+            "session_data": session_data
+        }
+
+    def _generate_with_rules(self, user_input: str, session_data: SessionData, intent_result: Dict, language: str) -> Dict[str, Any]:
+        """Generate response using rule-based system"""
+        # This mirrors the frontend logic but runs on backend
+        if session_data.step == "greeting" or not session_data.intent:
+            return self._handle_greeting_backend(user_input, intent_result, session_data, language)
+        elif session_data.step == "service_selection":
+            return self._handle_service_selection_backend(user_input, session_data, language)
+        elif session_data.step == "booking":
+            return self._handle_booking_backend(user_input, session_data, language)
+        else:
+            return self._handle_general_backend(user_input, session_data, language)
+
+    def _handle_greeting_backend(self, user_input: str, intent_result: Dict, session_data: SessionData, language: str) -> Dict[str, Any]:
+        """Handle greeting with backend logic"""
+        service = None
+        if intent_result.get("service_id"):
+            service = next((s for s in AVAILABLE_SERVICES if s.id == intent_result["service_id"]), None)
+        
+        if language == "ar":
+            if service:
+                message = f"""مرحباً! أفهم أنك تحتاج مساعدة في **{service.name[language]}**.
+
+🕒 **تفاصيل الخدمة:**
+• المدة المقدرة: {service.estimated_time} دقيقة
+• {service.icon} {service.description[language]}
+
+{'📅 تتطلب هذه الخدمة حجز موعد.' if service.requires_appointment else '💬 هذه خدمة استفسار عام.'}
+
+هل تريد المتابعة مع هذه الخدمة؟"""
+                session_data.step = "service_selection"
+                session_data.selected_service = service.id
+            else:
+                message = """مرحباً! أنا MIND14، مساعدك الافتراضي الذكي.
+
+🏛️ **يمكنني مساعدتك في:**
+• 🏥 تجديد البطاقة الصحية
+• 🆔 استبدال بطاقة الهوية
+• 👩‍⚕️ حجز المواعيد الطبية
+• 🎓 تسجيل الطلاب
+• 💬 الاستفسارات العامة
+
+كيف يمكنني مساعدتك اليوم؟"""
+                session_data.step = "intent_detection"
+        else:
+            if service:
+                message = f"""Hello! I understand you need help with **{service.name[language]}**.
+
+🕒 **Service Details:**
+• Estimated time: {service.estimated_time} minutes
+• {service.icon} {service.description[language]}
+
+{'📅 This service requires an appointment.' if service.requires_appointment else '💬 This is a general inquiry service.'}
+
+Would you like to proceed with this service?"""
+                session_data.step = "service_selection"
+                session_data.selected_service = service.id
+            else:
+                message = """Hello! I'm MIND14, your AI virtual assistant.
+
+🏛️ **I can help you with:**
+• 🏥 Health card renewal
+• 🆔 ID card replacement
+• 👩‍⚕️ Medical appointments
+• 🎓 Student enrollment
+• 💬 General inquiries
+
+How can I assist you today?"""
+                session_data.step = "intent_detection"
+        
+        session_data.intent = intent_result.get("intent")
+        session_data.confidence = intent_result.get("confidence", 0.0)
+        
+        return {"message": message, "session_data": session_data}
+
+    def _handle_service_selection_backend(self, user_input: str, session_data: SessionData, language: str) -> Dict[str, Any]:
+        """Handle service selection with backend logic"""
+        confirmation_words = {
+            "en": ["yes", "sure", "ok", "okay", "proceed", "continue", "confirm"],
+            "ar": ["نعم", "موافق", "حسنا", "متابعة", "استمر", "أكد", "موافقة"]
+        }
+        
+        is_confirming = any(word in user_input.lower() for word in confirmation_words[language])
+        
+        if is_confirming and session_data.selected_service:
+            service = next((s for s in AVAILABLE_SERVICES if s.id == session_data.selected_service), None)
+            
+            if service and service.requires_appointment:
+                if language == "ar":
+                    message = f"""ممتاز! سأساعدك في حجز موعد لـ **{service.name[language]}**.
+
+📋 **المعلومات المطلوبة:**
+• الاسم الكامل
+• رقم الهاتف
+• التاريخ والوقت المفضل
+
+⏰ **ساعات العمل:** {service.working_hours['start']} - {service.working_hours['end']}
+
+لنبدأ - ما هو اسمك الكامل؟"""
+                else:
+                    message = f"""Great! I'll help you book an appointment for **{service.name[language]}**.
+
+📋 **Required Information:**
+• Full name
+• Phone number
+• Preferred date and time
+
+⏰ **Working hours:** {service.working_hours['start']} - {service.working_hours['end']}
+
+Let's start - what's your full name?"""
+                
+                session_data.step = "booking"
+                session_data.booking_step = "name"
+            else:
+                if language == "ar":
+                    message = f"""أنا هنا لمساعدتك في **{service.name[language]}**. 
+
+هذه خدمة استفسار عام، لذا يمكنك طرح أي أسئلة تريدها حول هذا الموضوع."""
+                else:
+                    message = f"""I'm here to help with **{service.name[language]}**. 
+
+This is a general inquiry service, so feel free to ask any questions you have about this topic."""
+                
+                session_data.step = "general_inquiry"
+        else:
+            # Show service options
+            if language == "ar":
+                services_text = "\n".join([f"{s.icon} **{s.name['ar']}** - {s.description['ar']}" for s in AVAILABLE_SERVICES])
+                message = f"يمكنني مساعدتك في الخدمات التالية:\n\n{services_text}\n\nأي خدمة تهمك؟"
+            else:
+                services_text = "\n".join([f"{s.icon} **{s.name['en']}** - {s.description['en']}" for s in AVAILABLE_SERVICES])
+                message = f"I can help you with these services:\n\n{services_text}\n\nWhich service interests you?"
+            
+            session_data.step = "service_selection"
+        
+        return {"message": message, "session_data": session_data}
+
+    def _handle_booking_backend(self, user_input: str, session_data: SessionData, language: str) -> Dict[str, Any]:
+        """Handle booking process with backend logic"""
+        booking_step = session_data.booking_step or "name"
+        
+        if booking_step == "name":
+            session_data.collected_info["name"] = user_input
+            session_data.booking_step = "phone"
+            
+            if language == "ar":
+                message = f"شكراً، {user_input}! الآن أحتاج رقم هاتفك لتأكيد الموعد."
+            else:
+                message = f"Thank you, {user_input}! Now I need your phone number for appointment confirmation."
+                
+        elif booking_step == "phone":
+            session_data.collected_info["phone"] = user_input
+            session_data.booking_step = "datetime"
+            
+            if language == "ar":
+                message = "ممتاز! الآن أخبرني بالتاريخ والوقت المفضل. مثال: '25 يناير في الساعة 2:00 مساءً'"
+            else:
+                message = "Perfect! Now please tell me your preferred date and time. Example: 'January 25th at 2:00 PM'"
+                
+        elif booking_step == "datetime":
+            session_data.collected_info["preferred_datetime"] = user_input
+            
+            # Generate appointment confirmation
+            appointment_id = f"APT{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            session_data.appointment_id = appointment_id
+            
+            service = next((s for s in AVAILABLE_SERVICES if s.id == session_data.selected_service), None)
+            
+            if language == "ar":
+                message = f"""🎉 **تم حجز الموعد بنجاح!**
+
+📅 **تفاصيل الموعد:**
+• الخدمة: {service.name['ar'] if service else 'غير محدد'}
+• الاسم: {session_data.collected_info.get('name')}
+• الهاتف: {session_data.collected_info.get('phone')}
+• الوقت المفضل: {session_data.collected_info.get('preferred_datetime')}
+• رقم الموعد: {appointment_id}
+
+✅ ستتلقى تأكيداً عبر الرسائل النصية والبريد الإلكتروني قريباً.
+
+هل تحتاج مساعدة في أي شيء آخر؟"""
+            else:
+                message = f"""🎉 **Appointment Booked Successfully!**
+
+📅 **Appointment Details:**
+• Service: {service.name['en'] if service else 'Not specified'}
+• Name: {session_data.collected_info.get('name')}
+• Phone: {session_data.collected_info.get('phone')}
+• Preferred Time: {session_data.collected_info.get('preferred_datetime')}
+• Appointment ID: {appointment_id}
+
+✅ You will receive confirmation via SMS and email shortly.
+
+Is there anything else I can help you with?"""
+            
+            session_data.step = "completed"
+            
+            return {
+                "message": message,
+                "session_data": session_data,
+                "trigger_webhook": True,
+                "booking_data": {
+                    "appointment_id": appointment_id,
+                    "service": service.dict() if service else None,
+                    "customer_info": session_data.collected_info,
+                    "language": language,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }
+        
+        return {"message": message, "session_data": session_data}
+
+    def _handle_general_backend(self, user_input: str, session_data: SessionData, language: str) -> Dict[str, Any]:
+        """Handle general inquiries with backend logic"""
+        if language == "ar":
+            message = "أفهم سؤالك. كمساعدك الافتراضي، أنا هنا لمساعدتك في خدمات متنوعة. إذا كنت تحتاج مساعدة محددة، يرجى إخباري!"
+        else:
+            message = "I understand your question. As your virtual assistant, I'm here to help with various services. If you need specific assistance, please let me know!"
+        
+        return {"message": message, "session_data": session_data}
 
     def _get_response_generation_prompt(self, session_data: SessionData, language: str) -> str:
         """Get system prompt for response generation based on session context"""
