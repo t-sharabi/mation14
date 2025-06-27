@@ -6,6 +6,7 @@ import {
   Sidebar, 
   LoginForm, 
   AdminDashboard,
+  ManagementDashboard,
   ServiceCard,
   BookingInterface,
   LanguageSelector
