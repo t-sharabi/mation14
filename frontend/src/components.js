@@ -409,6 +409,7 @@ export const LoginForm = ({ onLogin }) => {
             <div className="text-center space-y-2">
               <p className="text-xs text-gray-400">{currentText.demoHint}</p>
               <p className="text-xs text-gray-400">{currentText.demoHintAdmin}</p>
+              <p className="text-xs text-gray-400">💼 Try manager@mind14.com for management access</p>
               <p className="text-sm text-gray-400">
                 {currentText.noAccount}{' '}
                 <button
