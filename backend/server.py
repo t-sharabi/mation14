@@ -829,24 +829,19 @@ async def n8n_booking_webhook(booking_data: BookingData):
 
 # Helper Functions
 async def process_conversation(user_input: str, session_data: SessionData, intent_result: Dict, language: str) -> Dict[str, Any]:
-    """Process conversation based on current session state"""
+    """Process conversation using enhanced AI backend system"""
     
     # Update session with intent information
     session_data.intent = intent_result["intent"]
     session_data.confidence = intent_result["confidence"]
     
-    if intent_result["service_id"]:
+    if intent_result.get("service_id"):
         session_data.selected_service = intent_result["service_id"]
     
-    # Process based on current step
-    if session_data.step == "greeting" or not session_data.intent:
-        return handle_greeting(user_input, intent_result, session_data, language)
-    elif session_data.step == "service_selection":
-        return handle_service_selection(user_input, session_data, language)
-    elif session_data.step == "booking":
-        return handle_booking(user_input, session_data, language)
-    else:
-        return handle_general(user_input, session_data, language)
+    # Use Mistral service for response generation
+    response = await mistral_service.generate_response(user_input, session_data, intent_result, language)
+    
+    return response
 
 def handle_greeting(user_input: str, intent_result: Dict, session_data: SessionData, language: str) -> Dict[str, Any]:
     """Handle initial greeting and service identification"""
