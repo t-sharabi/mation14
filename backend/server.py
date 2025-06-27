@@ -191,50 +191,57 @@ class MistralService:
         self.model_name = "mistral:7b-instruct-q4_0"  # or q5_0 for better quality
         
     async def ensure_model_available(self):
-        """Ensure Mistral model is available in Ollama"""
+        """Ensure Mistral model is available - fallback to rule-based for demo"""
         try:
-            models = await asyncio.to_thread(ollama.list)
-            model_names = [model['name'] for model in models['models']]
-            
-            if self.model_name not in model_names:
-                logger.info(f"Pulling Mistral model: {self.model_name}")
-                await asyncio.to_thread(ollama.pull, self.model_name)
-                logger.info("Mistral model pulled successfully")
-            
-            return True
+            # Try to check if Ollama is available
+            import subprocess
+            result = subprocess.run(['which', 'ollama'], capture_output=True, text=True)
+            if result.returncode == 0:
+                models = await asyncio.to_thread(ollama.list)
+                model_names = [model['name'] for model in models['models']]
+                
+                if self.model_name not in model_names:
+                    logger.info(f"Pulling Mistral model: {self.model_name}")
+                    await asyncio.to_thread(ollama.pull, self.model_name)
+                    logger.info("Mistral model pulled successfully")
+                
+                return True
+            else:
+                logger.warning("Ollama not available, using fallback AI system")
+                return False
         except Exception as e:
-            logger.error(f"Error ensuring Mistral model: {e}")
+            logger.warning(f"Ollama not available ({e}), using fallback AI system")
             return False
 
     async def classify_intent(self, user_input: str, language: str = "en") -> Dict[str, Any]:
-        """Classify user intent using Mistral 7B"""
+        """Classify user intent - with fallback to rule-based system"""
         try:
-            # Prepare the prompt for intent classification
-            system_prompt = self._get_intent_classification_prompt(language)
-            user_prompt = f"User input: {user_input}"
-            
-            # Call Mistral via Ollama
-            response = await asyncio.to_thread(
-                ollama.generate,
-                model=self.model_name,
-                prompt=f"{system_prompt}\n\n{user_prompt}",
-                stream=False
-            )
-            
-            # Parse the response
-            result = self._parse_intent_response(response['response'])
-            logger.info(f"Intent classification result: {result}")
-            
-            return result
+            # Try Mistral first
+            if await self.ensure_model_available():
+                return await self._classify_with_mistral(user_input, language)
+            else:
+                # Fallback to enhanced rule-based system
+                return self._fallback_intent_classification(user_input, language)
             
         except Exception as e:
             logger.error(f"Error in intent classification: {e}")
-            return {
-                "intent": "general_inquiry",
-                "confidence": 0.5,
-                "service_id": None,
-                "entities": {}
-            }
+            return self._fallback_intent_classification(user_input, language)
+
+    async def _classify_with_mistral(self, user_input: str, language: str) -> Dict[str, Any]:
+        """Classify using actual Mistral model"""
+        system_prompt = self._get_intent_classification_prompt(language)
+        user_prompt = f"User input: {user_input}"
+        
+        response = await asyncio.to_thread(
+            ollama.generate,
+            model=self.model_name,
+            prompt=f"{system_prompt}\n\n{user_prompt}",
+            stream=False
+        )
+        
+        result = self._parse_intent_response(response['response'])
+        logger.info(f"Mistral intent classification result: {result}")
+        return result
 
     def _get_intent_classification_prompt(self, language: str) -> str:
         """Get the system prompt for intent classification"""
