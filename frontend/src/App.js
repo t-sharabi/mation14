@@ -168,13 +168,21 @@ function App() {
   }, []);
 
   const handleLogin = (credentials) => {
+    // Enhanced user roles for dashboard access
+    let userRole = 'user';
+    if (credentials.email.includes('admin')) {
+      userRole = 'admin';
+    } else if (credentials.email.includes('manager')) {
+      userRole = 'manager';
+    }
+
     const user = {
       id: '1',
       name: credentials.fullName || credentials.email.split('@')[0],
       email: credentials.email,
       avatar: 'https://images.pexels.com/photos/7658539/pexels-photo-7658539.jpeg',
       phoneNumber: credentials.phoneNumber || null,
-      role: credentials.email.includes('admin') ? 'admin' : 'user'
+      role: userRole
     };
     setCurrentUser(user);
     setIsAuthenticated(true);
