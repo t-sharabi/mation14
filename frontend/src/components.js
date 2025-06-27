@@ -673,12 +673,14 @@ export const Sidebar = ({
     en: {
       newChat: 'New Chat',
       admin: 'Admin Panel',
-      chat: 'Chat Interface'
+      chat: 'Chat Interface',
+      management: 'Management Dashboard'
     },
     ar: {
       newChat: 'محادثة جديدة',
       admin: 'لوحة الإدارة',
-      chat: 'واجهة المحادثة'
+      chat: 'واجهة المحادثة',
+      management: 'لوحة الإدارة التنفيذية'
     }
   };
 
