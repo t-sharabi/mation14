@@ -1217,14 +1217,11 @@ export const VirtualDeskInterface = ({
           
           <div className="mt-2 text-xs text-gray-500 text-center">
             {currentText.disclaimer}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Admin Dashboard Component
+// Export placeholders for unused original components
+export const ModelSelector = () => null;
+export const FileUpload = () => null;
+export const FilePreview = () => null;
+export const BookingInterface = () => null;
 export const AdminDashboard = ({ conversations, services, language, onLanguageChange }) => {
   const [selectedTab, setSelectedTab] = useState('overview');
   const isRTL = language === 'ar';
