@@ -306,35 +306,109 @@ Analyze the user's message and return the result in JSON format:
             logger.error(f"Error parsing intent response: {e}")
             return self._fallback_intent_classification(response)
 
-    def _fallback_intent_classification(self, text: str) -> Dict[str, Any]:
-        """Fallback rule-based intent classification"""
+    def _fallback_intent_classification(self, text: str, language: str = "en") -> Dict[str, Any]:
+        """Enhanced fallback rule-based intent classification"""
         text_lower = text.lower()
         
+        # More comprehensive intent patterns
         intent_patterns = {
-            "health_card_renewal": ["health card", "renew", "renewal", "health insurance", "medical card", "بطاقة صحية", "تجديد"],
-            "id_card_replacement": ["id card", "identity", "replace", "lost id", "damaged id", "بطاقة هوية", "استبدال"],
-            "medical_consultation": ["doctor", "appointment", "medical", "consultation", "طبيب", "موعد", "استشارة"],
-            "student_enrollment": ["enroll", "student", "course", "register", "education", "تسجيل", "طالب", "دورة"]
+            "health_card_renewal": {
+                "en": ["health card", "renew", "renewal", "health insurance", "medical card", "health coverage", "insurance renewal"],
+                "ar": ["بطاقة صحية", "تجديد", "تأمين صحي", "بطاقة طبية", "تغطية صحية", "تأمين طبي"]
+            },
+            "id_card_replacement": {
+                "en": ["id card", "identity", "replace", "lost id", "damaged id", "identity card", "national id", "replacement"],
+                "ar": ["بطاقة هوية", "استبدال", "هوية مفقودة", "بطاقة تالفة", "هوية وطنية", "بطاقة شخصية"]
+            },
+            "medical_consultation": {
+                "en": ["doctor", "appointment", "medical", "consultation", "doctor visit", "see doctor", "medical appointment", "clinic"],
+                "ar": ["طبيب", "موعد", "استشارة", "طبية", "زيارة طبيب", "عيادة", "موعد طبي", "فحص طبي"]
+            },
+            "student_enrollment": {
+                "en": ["enroll", "student", "course", "register", "education", "enrollment", "university", "school", "study"],
+                "ar": ["تسجيل", "طالب", "دورة", "تعليم", "التحاق", "جامعة", "مدرسة", "دراسة", "قبول"]
+            }
         }
         
         max_score = 0
         detected_intent = "general_inquiry"
         
         for intent, patterns in intent_patterns.items():
-            score = sum(1 for pattern in patterns if pattern in text_lower)
-            if score > max_score:
-                max_score = score
+            words = patterns.get(language, patterns["en"])
+            score = sum(1 for word in words if word in text_lower)
+            
+            # Add bonus for exact matches
+            exact_matches = sum(2 for word in words if word == text_lower.strip())
+            total_score = score + exact_matches
+            
+            if total_score > max_score:
+                max_score = total_score
                 detected_intent = intent
         
-        confidence = min(0.5 + (max_score * 0.2), 0.95)
-        service_id = detected_intent.replace("_", "-") if detected_intent != "general_inquiry" else None
+        # Calculate confidence based on match strength
+        confidence = min(0.6 + (max_score * 0.15), 0.95)
+        
+        # If no good match found, check for greetings
+        greetings = {
+            "en": ["hello", "hi", "hey", "good morning", "good afternoon", "good evening"],
+            "ar": ["مرحبا", "أهلا", "السلام عليكم", "صباح الخير", "مساء الخير"]
+        }
+        
+        if max_score == 0:
+            greeting_words = greetings.get(language, greetings["en"])
+            if any(word in text_lower for word in greeting_words):
+                detected_intent = "greeting"
+                confidence = 0.9
+            else:
+                confidence = 0.5
+        
+        service_id = detected_intent.replace("_", "-") if detected_intent not in ["general_inquiry", "greeting"] else None
         
         return {
             "intent": detected_intent,
             "confidence": confidence,
             "service_id": service_id,
-            "entities": {}
+            "entities": self._extract_entities(text, language)
         }
+
+    def _extract_entities(self, text: str, language: str) -> Dict[str, Any]:
+        """Extract entities from user input"""
+        entities = {}
+        
+        # Extract phone numbers
+        import re
+        phone_pattern = r'(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+        phones = re.findall(phone_pattern, text)
+        if phones:
+            entities["phone"] = phones[0]
+        
+        # Extract names (simple heuristic)
+        if language == "ar":
+            name_patterns = ["اسمي", "أنا", "انا"]
+        else:
+            name_patterns = ["my name is", "i am", "i'm", "name:", "called"]
+        
+        for pattern in name_patterns:
+            if pattern in text.lower():
+                # Extract potential name after pattern
+                start_idx = text.lower().find(pattern) + len(pattern)
+                potential_name = text[start_idx:start_idx+50].strip()
+                if potential_name:
+                    entities["name"] = potential_name.split()[0] if potential_name.split() else potential_name
+                break
+        
+        # Extract dates/times
+        time_patterns = {
+            "en": ["today", "tomorrow", "next week", "monday", "tuesday", "wednesday", "thursday", "friday", "morning", "afternoon", "evening"],
+            "ar": ["اليوم", "غدا", "غداً", "الأسبوع القادم", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "صباحاً", "مساءً"]
+        }
+        
+        time_words = time_patterns.get(language, time_patterns["en"])
+        found_times = [word for word in time_words if word in text.lower()]
+        if found_times:
+            entities["time_preference"] = found_times
+        
+        return entities
 
     async def generate_response(self, user_input: str, session_data: SessionData, language: str = "en") -> Dict[str, Any]:
         """Generate AI response based on conversation context"""
