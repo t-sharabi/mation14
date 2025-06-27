@@ -1474,8 +1474,614 @@ export const AdminDashboard = ({ conversations, services, language, onLanguageCh
   );
 };
 
-// Export placeholders for unused original components
-export const ModelSelector = () => null;
-export const FileUpload = () => null;
-export const FilePreview = () => null;
-export const BookingInterface = () => null;
+// Management Dashboard Component (Business KPIs & Strategic Insights)
+export const ManagementDashboard = ({ conversations, services, language, onLanguageChange }) => {
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [dateRange, setDateRange] = useState('7d'); // 1d, 7d, 30d, 90d
+  const [refreshing, setRefreshing] = useState(false);
+  const isRTL = language === 'ar';
+
+  const text = {
+    en: {
+      title: 'Management Dashboard',
+      subtitle: 'Business Intelligence & Strategic Insights',
+      overview: 'Business Overview',
+      performance: 'Performance Metrics',
+      analytics: 'Advanced Analytics',
+      reports: 'Executive Reports',
+      
+      // KPI Cards
+      totalRevenue: 'Total Revenue',
+      customerSatisfaction: 'Customer Satisfaction',
+      serviceEfficiency: 'Service Efficiency',
+      costPerService: 'Cost Per Service',
+      conversionRate: 'Conversion Rate',
+      avgServiceTime: 'Avg Service Time',
+      
+      // Charts & Analytics
+      revenueGrowth: 'Revenue Growth Trend',
+      serviceDistribution: 'Service Distribution',
+      customerJourney: 'Customer Journey Analysis',
+      peakHours: 'Peak Service Hours',
+      satisfactionTrend: 'Satisfaction Trend',
+      
+      // Filters
+      last7Days: 'Last 7 Days',
+      last30Days: 'Last 30 Days',
+      last90Days: 'Last 90 Days',
+      today: 'Today',
+      
+      // Actions
+      exportReport: 'Export Report',
+      scheduleReport: 'Schedule Report',
+      viewDetails: 'View Details',
+      refresh: 'Refresh Data'
+    },
+    ar: {
+      title: 'لوحة الإدارة التنفيذية',
+      subtitle: 'ذكاء الأعمال والرؤى الاستراتيجية',
+      overview: 'نظرة عامة على الأعمال',
+      performance: 'مقاييس الأداء',
+      analytics: 'التحليلات المتقدمة',
+      reports: 'التقارير التنفيذية',
+      
+      totalRevenue: 'إجمالي الإيرادات',
+      customerSatisfaction: 'رضا العملاء',
+      serviceEfficiency: 'كفاءة الخدمة',
+      costPerService: 'تكلفة الخدمة',
+      conversionRate: 'معدل التحويل',
+      avgServiceTime: 'متوسط وقت الخدمة',
+      
+      revenueGrowth: 'اتجاه نمو الإيرادات',
+      serviceDistribution: 'توزيع الخدمات',
+      customerJourney: 'تحليل رحلة العميل',
+      peakHours: 'ساعات الذروة',
+      satisfactionTrend: 'اتجاه الرضا',
+      
+      last7Days: 'آخر 7 أيام',
+      last30Days: 'آخر 30 يوماً',
+      last90Days: 'آخر 90 يوماً',
+      today: 'اليوم',
+      
+      exportReport: 'تصدير التقرير',
+      scheduleReport: 'جدولة التقرير',
+      viewDetails: 'عرض التفاصيل',
+      refresh: 'تحديث البيانات'
+    }
+  };
+
+  const currentText = text[language];
+
+  // Mock Business KPIs (in production, these would come from analytics API)
+  const businessKPIs = {
+    totalRevenue: { value: '$47,500', change: '+12.5%', trend: 'up' },
+    customerSatisfaction: { value: '94.2%', change: '+2.1%', trend: 'up' },
+    serviceEfficiency: { value: '89.7%', change: '+5.3%', trend: 'up' },
+    costPerService: { value: '$23.50', change: '-8.2%', trend: 'down' },
+    conversionRate: { value: '78.3%', change: '+15.7%', trend: 'up' },
+    avgServiceTime: { value: '3.2 min', change: '-12.1%', trend: 'down' }
+  };
+
+  // Mock Revenue Data
+  const revenueData = [
+    { period: 'Week 1', revenue: 8500, target: 10000 },
+    { period: 'Week 2', revenue: 12300, target: 10000 },
+    { period: 'Week 3', revenue: 15600, target: 10000 },
+    { period: 'Week 4', revenue: 11200, target: 10000 }
+  ];
+
+  // Mock Service Performance Data
+  const servicePerformance = services.map((service, index) => ({
+    ...service,
+    bookings: Math.floor(Math.random() * 100) + 20,
+    revenue: Math.floor(Math.random() * 5000) + 1000,
+    satisfaction: Math.floor(Math.random() * 20) + 80,
+    efficiency: Math.floor(Math.random() * 25) + 75
+  }));
+
+  // Mock Customer Journey Data
+  const customerJourney = [
+    { stage: 'Landing', users: 1250, conversion: 100 },
+    { stage: 'Service Selection', users: 980, conversion: 78.4 },
+    { stage: 'Information Collection', users: 856, conversion: 87.3 },
+    { stage: 'Booking Confirmation', users: 743, conversion: 86.8 },
+    { stage: 'Service Completion', users: 698, conversion: 93.9 }
+  ];
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // Simulate data refresh
+    setTimeout(() => setRefreshing(false), 2000);
+  };
+
+  const handleExportReport = () => {
+    // Simulate report export
+    alert('Report exported successfully!');
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-900" dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Header */}
+      <div className="border-b border-gray-800 p-6 bg-gradient-to-r from-purple-900/50 to-pink-900/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center space-x-3">
+              <Icons.Management className="w-8 h-8 text-purple-400" />
+              <span>{currentText.title}</span>
+            </h1>
+            <p className="text-gray-300 mt-1">{currentText.subtitle}</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            {/* Date Range Selector */}
+            <select 
+              value={dateRange} 
+              onChange={(e) => setDateRange(e.target.value)}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="1d">{currentText.today}</option>
+              <option value="7d">{currentText.last7Days}</option>
+              <option value="30d">{currentText.last30Days}</option>
+              <option value="90d">{currentText.last90Days}</option>
+            </select>
+            
+            {/* Action Buttons */}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-white transition-colors disabled:opacity-50"
+            >
+              <Icons.RefreshCw className={refreshing ? 'animate-spin' : ''} />
+              <span className="text-sm">{currentText.refresh}</span>
+            </button>
+            
+            <button
+              onClick={handleExportReport}
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg text-white transition-colors"
+            >
+              <Icons.Download />
+              <span className="text-sm">{currentText.exportReport}</span>
+            </button>
+            
+            <LanguageSelector currentLanguage={language} onLanguageChange={onLanguageChange} />
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-800 bg-gray-850">
+        <div className="flex space-x-8 px-6">
+          {[
+            { id: 'overview', label: currentText.overview, icon: Icons.BarChart },
+            { id: 'performance', label: currentText.performance, icon: Icons.TrendingUp },
+            { id: 'analytics', label: currentText.analytics, icon: Icons.Target },
+            { id: 'reports', label: currentText.reports, icon: Icons.Download }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedTab(tab.id)}
+              className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                selectedTab === tab.id
+                  ? 'border-purple-500 text-purple-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <tab.icon />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {selectedTab === 'overview' && (
+          <div className="space-y-6">
+            {/* KPI Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Object.entries(businessKPIs).map(([key, kpi]) => (
+                <div key={key} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-purple-500/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-400">{currentText[key]}</p>
+                      <p className="text-3xl font-bold text-white mt-2">{kpi.value}</p>
+                    </div>
+                    <div className={`p-3 rounded-xl ${
+                      kpi.trend === 'up' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+                    }`}>
+                      {kpi.trend === 'up' ? <Icons.TrendingUp className="w-6 h-6" /> : <Icons.TrendingUp className="w-6 h-6 rotate-180" />}
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center">
+                    <span className={`text-sm font-medium ${
+                      kpi.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {kpi.change}
+                    </span>
+                    <span className="text-gray-500 text-sm ml-2">vs last period</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Revenue Growth Chart */}
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                <Icons.BarChart className="text-purple-400" />
+                <span>{currentText.revenueGrowth}</span>
+              </h3>
+              <div className="space-y-4">
+                {revenueData.map((data, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-300">{data.period}</span>
+                      <span className="text-gray-400">${data.revenue.toLocaleString()} / ${data.target.toLocaleString()}</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-3">
+                      <div 
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full relative" 
+                        style={{ width: `${Math.min((data.revenue / data.target) * 100, 100)}%` }}
+                      >
+                        <div className="absolute inset-0 bg-white/20 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Service Performance Overview */}
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                <Icons.Target className="text-purple-400" />
+                <span>{currentText.serviceDistribution}</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {servicePerformance.slice(0, 4).map((service) => (
+                  <div key={service.id} className="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{service.icon}</span>
+                        <div>
+                          <h4 className="text-white font-medium">{service.name[language]}</h4>
+                          <p className="text-gray-400 text-sm">{service.bookings} bookings</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-semibold">${service.revenue}</p>
+                        <p className="text-gray-400 text-sm">{service.satisfaction}% satisfaction</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Efficiency</span>
+                        <span className="text-gray-300">{service.efficiency}%</span>
+                      </div>
+                      <div className="w-full bg-gray-600 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full" 
+                          style={{ width: `${service.efficiency}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedTab === 'performance' && (
+          <div className="space-y-6">
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Customer Journey */}
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                  <Icons.Users className="text-purple-400" />
+                  <span>{currentText.customerJourney}</span>
+                </h3>
+                <div className="space-y-4">
+                  {customerJourney.map((stage, index) => (
+                    <div key={index} className="relative">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-gray-300 text-sm">{stage.stage}</span>
+                        <span className="text-gray-400 text-sm">{stage.users} users</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full" 
+                            style={{ width: `${stage.conversion}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-300 min-w-0">{stage.conversion}%</span>
+                      </div>
+                      {index < customerJourney.length - 1 && (
+                        <div className="absolute left-4 top-8 w-0.5 h-4 bg-gray-600"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Peak Hours Analysis */}
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                  <Icons.Activity className="text-purple-400" />
+                  <span>{currentText.peakHours}</span>
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { hour: '9:00 AM', load: 85, requests: 45 },
+                    { hour: '11:00 AM', load: 92, requests: 52 },
+                    { hour: '2:00 PM', load: 78, requests: 38 },
+                    { hour: '4:00 PM', load: 95, requests: 58 }
+                  ].map((hour, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-300">{hour.hour}</span>
+                        <span className="text-gray-400">{hour.requests} requests</span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${
+                            hour.load > 90 ? 'bg-gradient-to-r from-red-500 to-orange-500' :
+                            hour.load > 80 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                            'bg-gradient-to-r from-green-500 to-emerald-500'
+                          }`}
+                          style={{ width: `${hour.load}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Service Metrics */}
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-6">Detailed Service Performance</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left text-gray-400 font-medium py-3">Service</th>
+                      <th className="text-right text-gray-400 font-medium py-3">Bookings</th>
+                      <th className="text-right text-gray-400 font-medium py-3">Revenue</th>
+                      <th className="text-right text-gray-400 font-medium py-3">Satisfaction</th>
+                      <th className="text-right text-gray-400 font-medium py-3">Efficiency</th>
+                      <th className="text-right text-gray-400 font-medium py-3">Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {servicePerformance.map((service) => (
+                      <tr key={service.id} className="border-b border-gray-750 hover:bg-gray-750">
+                        <td className="py-4">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-xl">{service.icon}</span>
+                            <span className="text-white font-medium">{service.name[language]}</span>
+                          </div>
+                        </td>
+                        <td className="text-right text-gray-300">{service.bookings}</td>
+                        <td className="text-right text-gray-300">${service.revenue}</td>
+                        <td className="text-right">
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            service.satisfaction >= 90 ? 'bg-green-900 text-green-300' :
+                            service.satisfaction >= 80 ? 'bg-yellow-900 text-yellow-300' :
+                            'bg-red-900 text-red-300'
+                          }`}>
+                            {service.satisfaction}%
+                          </span>
+                        </td>
+                        <td className="text-right text-gray-300">{service.efficiency}%</td>
+                        <td className="text-right">
+                          <Icons.TrendingUp className="w-4 h-4 text-green-400 inline" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedTab === 'analytics' && (
+          <div className="space-y-6">
+            {/* Advanced Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Customer Satisfaction Trend */}
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                  <Icons.Target className="text-purple-400" />
+                  <span>{currentText.satisfactionTrend}</span>
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { month: 'Jan', satisfaction: 88, nps: 72 },
+                    { month: 'Feb', satisfaction: 91, nps: 78 },
+                    { month: 'Mar', satisfaction: 94, nps: 82 },
+                    { month: 'Apr', satisfaction: 96, nps: 85 }
+                  ].map((data, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-300">{data.month}</span>
+                        <span className="text-gray-400">Satisfaction: {data.satisfaction}% | NPS: {data.nps}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full" 
+                            style={{ width: `${data.satisfaction}%` }}
+                          ></div>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full" 
+                            style={{ width: `${data.nps}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cost Analysis */}
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                  <Icons.DollarSign className="text-purple-400" />
+                  <span>Cost Breakdown Analysis</span>
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { category: 'AI Processing', cost: 1250, percentage: 35 },
+                    { category: 'Staff Support', cost: 1800, percentage: 50 },
+                    { category: 'Infrastructure', cost: 420, percentage: 12 },
+                    { category: 'Other', cost: 130, percentage: 3 }
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-gray-300 text-sm">{item.category}</span>
+                          <span className="text-gray-400 text-sm">${item.cost}</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" 
+                            style={{ width: `${item.percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <span className="text-gray-400 text-sm ml-4 min-w-0">{item.percentage}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Predictive Analytics */}
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                <Icons.Activity className="text-purple-400" />
+                <span>Predictive Analytics & Forecasting</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mx-auto flex items-center justify-center mb-3">
+                    <span className="text-2xl font-bold text-white">↗</span>
+                  </div>
+                  <h4 className="text-white font-semibold">Revenue Forecast</h4>
+                  <p className="text-gray-400 text-sm mt-1">+18% growth expected</p>
+                  <p className="text-green-400 font-semibold mt-2">$58,200 next month</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mx-auto flex items-center justify-center mb-3">
+                    <span className="text-2xl font-bold text-white">⟲</span>
+                  </div>
+                  <h4 className="text-white font-semibold">Demand Prediction</h4>
+                  <p className="text-gray-400 text-sm mt-1">Peak at 2-4 PM</p>
+                  <p className="text-blue-400 font-semibold mt-2">+25% next week</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mx-auto flex items-center justify-center mb-3">
+                    <span className="text-2xl font-bold text-white">★</span>
+                  </div>
+                  <h4 className="text-white font-semibold">Quality Score</h4>
+                  <p className="text-gray-400 text-sm mt-1">AI accuracy improving</p>
+                  <p className="text-purple-400 font-semibold mt-2">97.2% predicted</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedTab === 'reports' && (
+          <div className="space-y-6">
+            {/* Executive Summary */}
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                <Icons.Download className="text-purple-400" />
+                <span>Executive Summary Report</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="text-white font-semibold">Key Achievements</h4>
+                  <ul className="space-y-2 text-gray-300">
+                    <li className="flex items-center space-x-2">
+                      <Icons.CheckCircle className="text-green-400" />
+                      <span>12.5% revenue growth achieved</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <Icons.CheckCircle className="text-green-400" />
+                      <span>Customer satisfaction up to 94.2%</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <Icons.CheckCircle className="text-green-400" />
+                      <span>AI response time improved by 15%</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <Icons.CheckCircle className="text-green-400" />
+                      <span>Cost per service reduced by 8.2%</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="space-y-4">
+                  <h4 className="text-white font-semibold">Action Items</h4>
+                  <ul className="space-y-2 text-gray-300">
+                    <li className="flex items-center space-x-2">
+                      <Icons.AlertTriangle className="text-yellow-400" />
+                      <span>Optimize peak hour staffing</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <Icons.AlertTriangle className="text-yellow-400" />
+                      <span>Enhance mobile experience</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <Icons.Target className="text-blue-400" />
+                      <span>Expand health services portfolio</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <Icons.Target className="text-blue-400" />
+                      <span>Implement voice AI integration</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Report Generation */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { title: 'Monthly Business Report', desc: 'Comprehensive monthly analytics', icon: Icons.BarChart },
+                { title: 'Customer Insights Report', desc: 'User behavior and satisfaction', icon: Icons.Users },
+                { title: 'Financial Performance', desc: 'Revenue and cost analysis', icon: Icons.DollarSign },
+                { title: 'Service Efficiency Report', desc: 'Operational metrics and KPIs', icon: Icons.Target },
+                { title: 'AI Performance Analysis', desc: 'Intent accuracy and response quality', icon: Icons.Activity },
+                { title: 'Competitive Analysis', desc: 'Market position and benchmarks', icon: Icons.TrendingUp }
+              ].map((report, index) => (
+                <div key={index} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-purple-500/50 transition-colors">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-purple-900/50 rounded-lg">
+                      <report.icon className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <h4 className="text-white font-semibold">{report.title}</h4>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-4">{report.desc}</p>
+                  <div className="flex space-x-2">
+                    <button className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition-colors">
+                      Generate
+                    </button>
+                    <button className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
+                      <Icons.Download />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
