@@ -24,11 +24,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Phase 3: Import automation services
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
 try:
-    from .calendar_service import calendar_service, CalendarEvent
-    from .notification_service import notification_service, NotificationMessage
-    from .n8n_service import n8n_service
-    from .database_service import enhanced_db, AppointmentStatus
+    from calendar_service import calendar_service, CalendarEvent
+    from notification_service import notification_service, NotificationMessage
+    from n8n_service import n8n_service
+    from database_service import enhanced_db, AppointmentStatus
     AUTOMATION_AVAILABLE = True
     logger.info("Automation services imported successfully")
 except ImportError as e:
