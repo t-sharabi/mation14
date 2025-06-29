@@ -16,6 +16,12 @@ import httpx
 import ollama
 from enum import Enum
 
+# Phase 3: Import automation services
+from calendar_service import calendar_service, CalendarEvent
+from notification_service import notification_service, NotificationMessage
+from n8n_service import n8n_service
+from database_service import enhanced_db, AppointmentStatus
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
