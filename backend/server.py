@@ -213,9 +213,56 @@ class AIServiceManager:
                 logger.warning("OpenAI API key not provided, falling back to rule-based system")
                 self.provider = "fallback"
         
-        logger.info(f"AI service initialized with provider: {self.provider}")
-        
-    async def _check_ollama_availability(self) -> bool:
+    async def classify_intent(self, user_input: str, language: str = "en") -> Dict[str, Any]:
+        """Classify user intent - with fallback to rule-based system"""
+        try:
+            # Try Ollama first if available
+            if self.provider == "ollama" and self.ollama_available:
+                return await self._classify_with_mistral(user_input, language)
+            # Try OpenAI if configured
+            elif self.provider == "openai" and self.api_key:
+                return await self._classify_with_openai(user_input, language)
+            else:
+                # Fallback to enhanced rule-based system
+                return self._fallback_intent_classification(user_input, language)
+            
+        except Exception as e:
+            logger.error(f"Error in intent classification: {e}")
+            return self._fallback_intent_classification(user_input, language)
+
+    async def generate_response(self, user_input: str, session_data: SessionData, intent_result: Dict, language: str = "en") -> Dict[str, Any]:
+        """Generate AI response based on conversation context"""
+        try:
+            # Try Ollama first if available
+            if self.provider == "ollama" and self.ollama_available:
+                return await self._generate_with_mistral(user_input, session_data, language)
+            # Try OpenAI if configured
+            elif self.provider == "openai" and self.api_key:
+                return await self._generate_with_openai(user_input, session_data, language)
+            else:
+                return self._generate_with_rules(user_input, session_data, intent_result, language)
+            
+        except Exception as e:
+            logger.error(f"Error generating response: {e}")
+            fallback_message = "I apologize, but I'm having trouble processing your request. Please try again." if language == "en" else "أعتذر، أواجه مشكلة في معالجة طلبك. يرجى المحاولة مرة أخرى."
+            return {
+                "message": fallback_message,
+                "session_data": session_data
+            }
+
+    async def _classify_with_openai(self, user_input: str, language: str) -> Dict[str, Any]:
+        """Classify using OpenAI API (placeholder for future implementation)"""
+        # For now, fallback to rule-based
+        return self._fallback_intent_classification(user_input, language)
+    
+    async def _generate_with_openai(self, user_input: str, session_data: SessionData, language: str) -> Dict[str, Any]:
+        """Generate response using OpenAI API (placeholder for future implementation)"""
+        # For now, fallback to rule-based
+        return self._generate_with_rules(user_input, session_data, {}, language)
+
+    async def ensure_model_available(self):
+        """Ensure AI model is available - backward compatibility method"""
+        return await self.initialize()
         """Check if Ollama is available and working"""
         try:
             import subprocess
