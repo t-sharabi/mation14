@@ -263,6 +263,19 @@ class AIServiceManager:
     async def ensure_model_available(self):
         """Ensure AI model is available - backward compatibility method"""
         return await self.initialize()
+
+    async def _check_ollama_availability(self) -> bool:
+        """Check if Ollama is available and working"""
+        try:
+            import subprocess
+            result = subprocess.run(['which', 'ollama'], capture_output=True, text=True)
+            if result.returncode == 0:
+                models = await asyncio.to_thread(ollama.list)
+                return True
+            return False
+        except Exception as e:
+            logger.warning(f"Ollama not available: {e}")
+            return False
         """Check if Ollama is available and working"""
         try:
             import subprocess
