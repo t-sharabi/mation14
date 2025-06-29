@@ -27,3 +27,12 @@ httpx>=0.24.0
 aiofiles>=23.0.0
 langchain>=0.1.0
 ollama>=0.1.0
+# Phase 3: Calendar & Notification Integration
+google-auth>=2.40.0
+google-auth-oauthlib>=1.2.0
+google-auth-httplib2>=0.2.0
+google-api-python-client>=2.174.0
+icalendar>=6.3.0
+exchangelib>=5.5.0
+sendgrid>=6.12.0
+twilio>=9.6.0
