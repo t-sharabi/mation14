@@ -1628,26 +1628,30 @@ async def startup_event():
     await ai_service.initialize()
     logger.info(f"AI service initialized with provider: {ai_service.provider}")
     
-    # Initialize enhanced database
-    db_initialized = await enhanced_db.initialize()
-    if db_initialized:
-        logger.info("Enhanced database service initialized")
+    if AUTOMATION_AVAILABLE:
+        # Initialize enhanced database
+        db_initialized = await enhanced_db.initialize()
+        if db_initialized:
+            logger.info("Enhanced database service initialized")
+        else:
+            logger.warning("Enhanced database failed to initialize - using fallback")
+        
+        # Get calendar service status
+        calendar_status = await calendar_service.get_provider_status()
+        logger.info(f"Calendar service initialized - Providers: {calendar_status['total_providers']}")
+        
+        # Get notification service status  
+        notification_status = await notification_service.get_provider_status()
+        logger.info(f"Notification service initialized - Channels: {notification_status['total_channels']}")
+        
+        # Get n8n service status
+        workflow_status = await n8n_service.get_available_workflows()
+        logger.info(f"n8n service initialized - Workflows: {workflow_status['total_workflows']}")
+        
+        logger.info("Phase 3: Automation Integration completed successfully!")
     else:
-        logger.warning("Enhanced database failed to initialize - using fallback")
+        logger.info("Running in basic mode without automation services")
     
-    # Get calendar service status
-    calendar_status = await calendar_service.get_provider_status()
-    logger.info(f"Calendar service initialized - Providers: {calendar_status['total_providers']}")
-    
-    # Get notification service status  
-    notification_status = await notification_service.get_provider_status()
-    logger.info(f"Notification service initialized - Channels: {notification_status['total_channels']}")
-    
-    # Get n8n service status
-    workflow_status = await n8n_service.get_available_workflows()
-    logger.info(f"n8n service initialized - Workflows: {workflow_status['total_workflows']}")
-    
-    logger.info("Phase 3: Automation Integration completed successfully!")
     logger.info("API startup completed")
 
 @api_router.get("/")
