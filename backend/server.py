@@ -599,7 +599,137 @@ Is there anything else I can help you with?"""
             else:
                 return "I understand your inquiry. As your intelligent virtual assistant, I can help with various services. Could you please specify the type of service you need more clearly?"
 
-# Legacy class for backward compatibility
+    def _fallback_intent_classification(self, text: str, language: str = "en") -> Dict[str, Any]:
+        """Enhanced fallback rule-based intent classification with better accuracy"""
+        text_lower = text.lower()
+        
+        # Enhanced intent patterns with more keywords and context
+        intent_patterns = {
+            "health_card_renewal": {
+                "en": [
+                    "health card", "renew", "renewal", "health insurance", "medical card", 
+                    "health coverage", "insurance renewal", "medical coverage", "health plan",
+                    "insurance card", "medical insurance", "health benefits", "coverage renewal",
+                    "health card expired", "medical card expired", "renew health", "health renewal"
+                ],
+                "ar": [
+                    "بطاقة صحية", "تجديد", "تأمين صحي", "بطاقة طبية", "تغطية صحية", 
+                    "تأمين طبي", "بطاقة تأمين", "تجديد التأمين", "تأمين صحي منتهي",
+                    "بطاقة صحية منتهية", "تجديد بطاقة صحية", "تأمين طبي منتهي الصلاحية"
+                ]
+            },
+            "id_card_replacement": {
+                "en": [
+                    "id card", "identity", "replace", "lost id", "damaged id", "identity card", 
+                    "national id", "replacement", "new id", "id replacement", "lost identity",
+                    "damaged identity", "identity replacement", "id card lost", "id card damaged",
+                    "replace identity", "new identity card", "lost national id"
+                ],
+                "ar": [
+                    "بطاقة هوية", "استبدال", "هوية مفقودة", "بطاقة تالفة", "هوية وطنية", 
+                    "بطاقة شخصية", "هوية مفقودة", "بطاقة هوية تالفة", "استبدال الهوية",
+                    "بطاقة هوية جديدة", "هوية شخصية مفقودة", "بطاقة هوية منتهية الصلاحية"
+                ]
+            },
+            "medical_consultation": {
+                "en": [
+                    "doctor", "appointment", "medical", "consultation", "doctor visit", "see doctor", 
+                    "medical appointment", "clinic", "physician", "healthcare", "medical check",
+                    "doctor consultation", "medical examination", "health checkup", "medical advice",
+                    "book appointment", "schedule appointment", "medical consultation", "see physician"
+                ],
+                "ar": [
+                    "طبيب", "موعد", "استشارة", "طبية", "زيارة طبيب", "عيادة", "موعد طبي", 
+                    "فحص طبي", "استشارة طبية", "فحص صحي", "طبيب استشاري", "حجز موعد",
+                    "موعد مع طبيب", "استشارة طبيب", "فحص طبي", "زيارة عيادة", "موعد في العيادة"
+                ]
+            },
+            "student_enrollment": {
+                "en": [
+                    "enroll", "student", "course", "register", "education", "enrollment", 
+                    "university", "school", "study", "academic", "registration", "course registration",
+                    "student registration", "academic enrollment", "school enrollment", "university enrollment",
+                    "course enrollment", "educational program", "academic program", "study program"
+                ],
+                "ar": [
+                    "تسجيل", "طالب", "دورة", "تعليم", "التحاق", "جامعة", "مدرسة", "دراسة", 
+                    "قبول", "تسجيل طالب", "التحاق بالجامعة", "تسجيل في دورة", "برنامج تعليمي",
+                    "التسجيل الأكاديمي", "التحاق بالمدرسة", "تسجيل في البرنامج", "قبول جامعي"
+                ]
+            },
+            "greeting": {
+                "en": [
+                    "hello", "hi", "hey", "good morning", "good afternoon", "good evening", 
+                    "greetings", "howdy", "salutations", "good day", "welcome", "start"
+                ],
+                "ar": [
+                    "مرحبا", "أهلا", "السلام عليكم", "صباح الخير", "مساء الخير", 
+                    "أهلا وسهلا", "حياك الله", "وعليكم السلام", "أهلاً بك"
+                ]
+            }
+        }
+        
+        # Calculate scores for each intent
+        intent_scores = {}
+        for intent, patterns in intent_patterns.items():
+            words = patterns.get(language, patterns["en"])
+            
+            # Basic keyword matching
+            keyword_score = sum(1 for word in words if word in text_lower)
+            
+            # Exact phrase matching (higher weight)
+            phrase_score = sum(3 for word in words if word == text_lower.strip())
+            
+            # Partial phrase matching
+            partial_score = sum(2 for word in words if len(word) > 3 and word in text_lower and word != text_lower.strip())
+            
+            # Context scoring (if multiple keywords from same intent)
+            context_bonus = 0
+            if keyword_score > 1:
+                context_bonus = keyword_score * 0.5
+            
+            total_score = keyword_score + phrase_score + partial_score + context_bonus
+            intent_scores[intent] = total_score
+        
+        # Find the best intent
+        if intent_scores:
+            best_intent = max(intent_scores, key=intent_scores.get)
+            max_score = intent_scores[best_intent]
+        else:
+            best_intent = "general_inquiry"
+            max_score = 0
+        
+        # Calculate confidence based on score strength
+        if max_score == 0:
+            confidence = 0.3
+            detected_intent = "general_inquiry"
+        elif max_score >= 5:
+            confidence = 0.95
+            detected_intent = best_intent
+        elif max_score >= 3:
+            confidence = 0.85
+            detected_intent = best_intent
+        elif max_score >= 1:
+            confidence = 0.70
+            detected_intent = best_intent
+        else:
+            confidence = 0.5
+            detected_intent = "general_inquiry"
+        
+        # Special handling for greetings
+        if best_intent == "greeting" and max_score > 0:
+            confidence = 0.95
+            detected_intent = "greeting"
+        
+        service_id = detected_intent.replace("_", "-") if detected_intent not in ["general_inquiry", "greeting"] else None
+        
+        return {
+            "intent": detected_intent,
+            "confidence": confidence,
+            "service_id": service_id,
+            "entities": self._extract_entities(text, language),
+            "debug_scores": intent_scores  # For debugging/testing
+        }
 class MistralService(AIServiceManager):
     def __init__(self):
         super().__init__()
