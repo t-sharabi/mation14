@@ -1822,6 +1822,92 @@ async def chat_endpoint(request: ChatRequest):
 
         # Trigger n8n webhook if booking completed
         if ai_response.get("trigger_webhook") and ai_response.get("booking_data"):
+            # Enhanced automation integration
+            booking_data = ai_response["booking_data"]
+            
+            # 1. Store appointment in enhanced database
+            try:
+                appointment = await enhanced_db.create_appointment(booking_data)
+                logger.info(f"Appointment stored in database: {appointment.id}")
+            except Exception as e:
+                logger.error(f"Error storing appointment: {e}")
+            
+            # 2. Create calendar events
+            try:
+                calendar_result = await calendar_service.create_appointment(booking_data)
+                logger.info(f"Calendar events created: {calendar_result}")
+                
+                # Update appointment with calendar event IDs
+                if calendar_result.get("calendar_events"):
+                    for provider, event_data in calendar_result["calendar_events"].items():
+                        if event_data.get("success") and event_data.get("event_id"):
+                            await enhanced_db.add_calendar_event(
+                                booking_data["appointment_id"],
+                                provider,
+                                event_data["event_id"]
+                            )
+            except Exception as e:
+                logger.error(f"Error creating calendar events: {e}")
+            
+            # 3. Send notifications
+            try:
+                notification_result = await notification_service.send_appointment_confirmation(booking_data)
+                logger.info(f"Notifications sent: {notification_result}")
+                
+                # Log notifications in database
+                for channel, result in notification_result.get("notifications_sent", {}).items():
+                    if result.get("success"):
+                        await enhanced_db.log_notification({
+                            "appointment_id": booking_data["appointment_id"],
+                            "customer_id": appointment.customer_id if 'appointment' in locals() else "unknown",
+                            "channel": channel,
+                            "status": "sent",
+                            "message_type": "confirmation",
+                            "recipient": result.get("recipient", ""),
+                            "message_content": result.get("content", ""),
+                            "sent_at": datetime.utcnow(),
+                            "provider_id": result.get("message_id")
+                        })
+            except Exception as e:
+                logger.error(f"Error sending notifications: {e}")
+            
+            # 4. Trigger n8n workflow
+            try:
+                workflow_result = await n8n_service.trigger_appointment_workflow(booking_data)
+                logger.info(f"n8n workflow triggered: {workflow_result}")
+                
+                # Log workflow execution
+                await enhanced_db.log_workflow_execution({
+                    "appointment_id": booking_data["appointment_id"],
+                    "workflow_name": "appointment_booking",
+                    "trigger_type": "booking_completed",
+                    "execution_data": workflow_result,
+                    "n8n_execution_id": workflow_result.get("execution_id"),
+                    "status": "completed" if workflow_result.get("success") else "failed"
+                })
+                
+                # Schedule reminders
+                if workflow_result.get("success"):
+                    reminder_24h = datetime.utcnow() + timedelta(hours=23)  # 24h before appointment
+                    reminder_1h = datetime.utcnow() + timedelta(hours=47)   # 1h before appointment
+                    
+                    await notification_service.schedule_reminder(booking_data, reminder_24h)
+                    await notification_service.schedule_reminder(booking_data, reminder_1h)
+                
+            except Exception as e:
+                logger.error(f"Error triggering n8n workflow: {e}")
+            
+            # Update appointment status
+            try:
+                await enhanced_db.update_appointment_status(
+                    booking_data["appointment_id"],
+                    AppointmentStatus.CONFIRMED,
+                    "Appointment created and confirmed via AI chat"
+                )
+            except Exception as e:
+                logger.error(f"Error updating appointment status: {e}")
+            
+            # Legacy webhook call (for backward compatibility)
             await trigger_n8n_webhook(ai_response["booking_data"])
 
         return ChatResponse(
