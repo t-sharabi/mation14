@@ -771,6 +771,7 @@ Is there anything else I can help you with?"""
         return entities
 
 # Legacy class for backward compatibility
+class LegacyAIService(AIServiceManager):
     def __init__(self):
         super().__init__()
         self.model_name = "mistral:7b-instruct-q4_0"  # or q5_0 for better quality
