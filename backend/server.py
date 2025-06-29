@@ -16,11 +16,30 @@ import httpx
 import ollama
 from enum import Enum
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Phase 3: Import automation services
-from calendar_service import calendar_service, CalendarEvent
-from notification_service import notification_service, NotificationMessage
-from n8n_service import n8n_service
-from database_service import enhanced_db, AppointmentStatus
+try:
+    from .calendar_service import calendar_service, CalendarEvent
+    from .notification_service import notification_service, NotificationMessage
+    from .n8n_service import n8n_service
+    from .database_service import enhanced_db, AppointmentStatus
+    AUTOMATION_AVAILABLE = True
+    logger.info("Automation services imported successfully")
+except ImportError as e:
+    logger.warning(f"Automation services not available: {e}")
+    AUTOMATION_AVAILABLE = False
+    # Create mock objects for fallback
+    calendar_service = None
+    notification_service = None
+    n8n_service = None
+    enhanced_db = None
+    AppointmentStatus = None
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
