@@ -185,9 +185,53 @@ AVAILABLE_SERVICES = [
     )
 ]
 
-# Mistral AI Integration
-class MistralService:
+# Enhanced AI Service Manager - Flexible Architecture
+class AIServiceManager:
     def __init__(self):
+        self.provider = "fallback"  # Default to fallback, can be changed to "ollama", "openai", etc.
+        self.model_name = "mistral:7b-instruct-q4_0"  # For Ollama
+        self.api_key = None
+        self.ollama_available = False
+        
+    def set_provider(self, provider: str, api_key: str = None, model: str = None):
+        """Set AI provider and configuration"""
+        self.provider = provider
+        self.api_key = api_key
+        if model:
+            self.model_name = model
+        logger.info(f"AI provider set to: {provider}")
+        
+    async def initialize(self):
+        """Initialize the AI service based on provider"""
+        if self.provider == "ollama":
+            self.ollama_available = await self._check_ollama_availability()
+            if not self.ollama_available:
+                logger.warning("Ollama not available, falling back to rule-based system")
+                self.provider = "fallback"
+        elif self.provider == "openai":
+            if not self.api_key:
+                logger.warning("OpenAI API key not provided, falling back to rule-based system")
+                self.provider = "fallback"
+        
+        logger.info(f"AI service initialized with provider: {self.provider}")
+        
+    async def _check_ollama_availability(self) -> bool:
+        """Check if Ollama is available and working"""
+        try:
+            import subprocess
+            result = subprocess.run(['which', 'ollama'], capture_output=True, text=True)
+            if result.returncode == 0:
+                models = await asyncio.to_thread(ollama.list)
+                return True
+            return False
+        except Exception as e:
+            logger.warning(f"Ollama not available: {e}")
+            return False
+
+# Legacy class for backward compatibility
+class MistralService(AIServiceManager):
+    def __init__(self):
+        super().__init__()
         self.model_name = "mistral:7b-instruct-q4_0"  # or q5_0 for better quality
         
     async def ensure_model_available(self):
