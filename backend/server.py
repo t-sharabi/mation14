@@ -730,7 +730,47 @@ Is there anything else I can help you with?"""
             "entities": self._extract_entities(text, language),
             "debug_scores": intent_scores  # For debugging/testing
         }
-class MistralService(AIServiceManager):
+
+    def _extract_entities(self, text: str, language: str) -> Dict[str, Any]:
+        """Extract entities from user input"""
+        entities = {}
+        
+        # Extract phone numbers
+        import re
+        phone_pattern = r'(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+        phones = re.findall(phone_pattern, text)
+        if phones:
+            entities["phone"] = phones[0]
+        
+        # Extract names (simple heuristic)
+        if language == "ar":
+            name_patterns = ["اسمي", "أنا", "انا"]
+        else:
+            name_patterns = ["my name is", "i am", "i'm", "name:", "called"]
+        
+        for pattern in name_patterns:
+            if pattern in text.lower():
+                # Extract potential name after pattern
+                start_idx = text.lower().find(pattern) + len(pattern)
+                potential_name = text[start_idx:start_idx+50].strip()
+                if potential_name:
+                    entities["name"] = potential_name.split()[0] if potential_name.split() else potential_name
+                break
+        
+        # Extract dates/times
+        time_patterns = {
+            "en": ["today", "tomorrow", "next week", "monday", "tuesday", "wednesday", "thursday", "friday", "morning", "afternoon", "evening"],
+            "ar": ["اليوم", "غدا", "غداً", "الأسبوع القادم", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "صباحاً", "مساءً"]
+        }
+        
+        time_words = time_patterns.get(language, time_patterns["en"])
+        found_times = [word for word in time_words if word in text.lower()]
+        if found_times:
+            entities["time_preference"] = found_times
+        
+        return entities
+
+# Legacy class for backward compatibility
     def __init__(self):
         super().__init__()
         self.model_name = "mistral:7b-instruct-q4_0"  # or q5_0 for better quality
