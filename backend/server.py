@@ -911,8 +911,9 @@ Respond in a friendly and professional manner."""
         
         return base_prompt
 
-# Initialize Mistral service
-mistral_service = MistralService()
+# Initialize Enhanced AI service (backward compatible)
+ai_service = AIServiceManager()
+mistral_service = ai_service  # For backward compatibility
 
 # API Routes
 @api_router.on_event("startup")
