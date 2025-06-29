@@ -556,16 +556,118 @@ Analyze the user's message and return the result in JSON format:
         }
 
     def _generate_with_rules(self, user_input: str, session_data: SessionData, intent_result: Dict, language: str) -> Dict[str, Any]:
-        """Generate response using rule-based system"""
-        # This mirrors the frontend logic but runs on backend
+        """Enhanced rule-based response generation with AI-like sophistication"""
+        
+        # Add some AI-like variability and context awareness
+        confidence = intent_result.get("confidence", 0.5)
+        intent = intent_result.get("intent", "general_inquiry")
+        
+        # Context-aware response generation
         if session_data.step == "greeting" or not session_data.intent:
             return self._handle_greeting_backend(user_input, intent_result, session_data, language)
         elif session_data.step == "service_selection":
             return self._handle_service_selection_backend(user_input, session_data, language)
         elif session_data.step == "booking":
             return self._handle_booking_backend(user_input, session_data, language)
+        elif session_data.step == "general_inquiry":
+            return self._handle_general_inquiry_advanced(user_input, session_data, intent_result, language)
         else:
             return self._handle_general_backend(user_input, session_data, language)
+            
+    def _handle_general_inquiry_advanced(self, user_input: str, session_data: SessionData, intent_result: Dict, language: str) -> Dict[str, Any]:
+        """Advanced general inquiry handling with service-specific knowledge"""
+        
+        service_id = session_data.selected_service
+        service = None
+        if service_id:
+            service = next((s for s in AVAILABLE_SERVICES if s.id == service_id), None)
+        
+        # Generate contextual responses based on the service and user input
+        if service:
+            service_responses = self._get_service_specific_responses(service, user_input, language)
+            if service_responses:
+                return {"message": service_responses, "session_data": session_data}
+        
+        # Fallback to general responses with some intelligence
+        general_responses = self._get_intelligent_general_response(user_input, intent_result, language)
+        return {"message": general_responses, "session_data": session_data}
+    
+    def _get_service_specific_responses(self, service: ServiceInfo, user_input: str, language: str) -> str:
+        """Generate service-specific intelligent responses"""
+        
+        user_lower = user_input.lower()
+        
+        # Health Card Renewal specific responses
+        if service.id == "health-card-renewal":
+            if language == "ar":
+                if any(word in user_lower for word in ["متى", "وقت", "مدة", "كم"]):
+                    return f"عادة ما تستغرق عملية **{service.name['ar']}** حوالي {service.estimated_time} دقيقة. نحن نعمل من {service.working_hours['start']} إلى {service.working_hours['end']} في أيام العمل."
+                elif any(word in user_lower for word in ["مطلوب", "محتاج", "وثائق", "أوراق"]):
+                    return f"لـ **{service.name['ar']}**، ستحتاج إلى إحضار: بطاقة الهوية الحالية، والبطاقة الصحية المنتهية الصلاحية، وصورة شخصية حديثة. هل تريد حجز موعد؟"
+                elif any(word in user_lower for word in ["سعر", "تكلفة", "رسوم"]):
+                    return f"رسوم **{service.name['ar']}** تختلف حسب نوع التأمين. للحصول على معلومات دقيقة عن التكلفة، يرجى حجز موعد للاستشارة."
+            else:
+                if any(word in user_lower for word in ["how long", "duration", "time", "when"]):
+                    return f"The **{service.name['en']}** process typically takes about {service.estimated_time} minutes. We operate from {service.working_hours['start']} to {service.working_hours['end']} on working days."
+                elif any(word in user_lower for word in ["need", "require", "documents", "papers"]):
+                    return f"For **{service.name['en']}**, you'll need to bring: current ID card, expired health card, and a recent photo. Would you like to book an appointment?"
+                elif any(word in user_lower for word in ["cost", "price", "fee"]):
+                    return f"The fees for **{service.name['en']}** vary depending on your insurance type. For accurate cost information, please book an appointment for consultation."
+        
+        # ID Card Replacement specific responses
+        elif service.id == "id-card-replacement":
+            if language == "ar":
+                if any(word in user_lower for word in ["ضائع", "مفقود", "سرقة"]):
+                    return f"أفهم أن بطاقة هويتك مفقودة. لـ **{service.name['ar']}**، ستحتاج أولاً إلى تقديم بلاغ في الشرطة، ثم إحضار نسخة من البلاغ مع وثائق إضافية. هل تريد حجز موعد؟"
+                elif any(word in user_lower for word in ["تالف", "كسر", "تمزق"]):
+                    return f"لحالات **{service.name['ar']}** بسبب التلف، يرجى إحضار البطاقة التالفة مع وثائق الهوية الداعمة. العملية تستغرق {service.estimated_time} دقيقة."
+            else:
+                if any(word in user_lower for word in ["lost", "missing", "stolen"]):
+                    return f"I understand your ID card is lost. For **{service.name['en']}**, you'll first need to file a police report, then bring a copy of the report with additional documents. Would you like to book an appointment?"
+                elif any(word in user_lower for word in ["damaged", "broken", "torn"]):
+                    return f"For **{service.name['en']}** due to damage, please bring the damaged card with supporting identity documents. The process takes {service.estimated_time} minutes."
+        
+        # Medical Consultation specific responses
+        elif service.id == "medical-consultation":
+            if language == "ar":
+                if any(word in user_lower for word in ["تخصص", "طبيب", "نوع"]):
+                    return f"نوفر **{service.name['ar']}** مع أطباء متخصصين في مختلف المجالات. يرجى تحديد التخصص المطلوب عند حجز الموعد. المدة المقدرة {service.estimated_time} دقيقة."
+                elif any(word in user_lower for word in ["عاجل", "طارئ", "مستعجل"]):
+                    return f"للحالات العاجلة، نوصي بزيارة قسم الطوارئ. بالنسبة لـ **{service.name['ar']}** العادية، يمكنك حجز موعد خلال أيام العمل من {service.working_hours['start']} إلى {service.working_hours['end']}."
+            else:
+                if any(word in user_lower for word in ["specialist", "type", "doctor"]):
+                    return f"We provide **{service.name['en']}** with specialized doctors in various fields. Please specify the required specialty when booking. Estimated duration is {service.estimated_time} minutes."
+                elif any(word in user_lower for word in ["urgent", "emergency", "immediate"]):
+                    return f"For urgent cases, we recommend visiting the emergency department. For regular **{service.name['en']}**, you can book an appointment during working hours {service.working_hours['start']} to {service.working_hours['end']}."
+        
+        return None
+    
+    def _get_intelligent_general_response(self, user_input: str, intent_result: Dict, language: str) -> str:
+        """Generate intelligent general responses"""
+        
+        confidence = intent_result.get("confidence", 0.5)
+        intent = intent_result.get("intent", "general_inquiry")
+        
+        # High confidence responses
+        if confidence > 0.8:
+            if language == "ar":
+                return f"أفهم أنك تحتاج مساعدة في {intent.replace('_', ' ')}. يمكنني تقديم معلومات مفصلة وإرشادك خلال العملية. ما الذي تريد معرفته تحديداً؟"
+            else:
+                return f"I understand you need help with {intent.replace('_', ' ')}. I can provide detailed information and guide you through the process. What specifically would you like to know?"
+        
+        # Medium confidence responses
+        elif confidence > 0.6:
+            if language == "ar":
+                return f"يبدو أنك تستفسر عن {intent.replace('_', ' ')}. لدي معلومات شاملة حول هذه الخدمة. كيف يمكنني مساعدتك بشكل أفضل؟"
+            else:
+                return f"It seems you're inquiring about {intent.replace('_', ' ')}. I have comprehensive information about this service. How can I best assist you?"
+        
+        # Lower confidence responses
+        else:
+            if language == "ar":
+                return "أفهم استفسارك. كمساعدك الافتراضي الذكي، يمكنني مساعدتك في خدمات متنوعة. هل يمكنك تحديد نوع الخدمة التي تحتاجها بشكل أوضح؟"
+            else:
+                return "I understand your inquiry. As your intelligent virtual assistant, I can help with various services. Could you please specify the type of service you need more clearly?"
 
     def _handle_greeting_backend(self, user_input: str, intent_result: Dict, session_data: SessionData, language: str) -> Dict[str, Any]:
         """Handle greeting with backend logic"""
