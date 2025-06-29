@@ -1662,6 +1662,98 @@ async def get_ai_status():
         "ollama_available": ai_service.ollama_available if hasattr(ai_service, 'ollama_available') else False
     }
 
+@api_router.get("/automation-status")
+async def get_automation_status():
+    """Get status of all automation services"""
+    
+    # Get database status
+    db_status = await enhanced_db.health_check()
+    
+    # Get calendar status
+    calendar_status = await calendar_service.get_provider_status()
+    
+    # Get notification status
+    notification_status = await notification_service.get_provider_status()
+    
+    # Get workflow status
+    workflow_status = await n8n_service.get_available_workflows()
+    
+    return {
+        "database": {
+            "connected": db_status.get("database_connected", False),
+            "collections": db_status.get("collections", {}),
+            "status": "healthy" if db_status.get("database_connected") else "error"
+        },
+        "calendar": {
+            "providers": calendar_status.get("providers", {}),
+            "total_providers": calendar_status.get("total_providers", 0),
+            "default_provider": calendar_status.get("default_provider", "google")
+        },
+        "notifications": {
+            "channels": notification_status.get("providers", {}),
+            "total_channels": notification_status.get("total_channels", 0),
+            "supported_languages": notification_status.get("supported_languages", [])
+        },
+        "workflows": {
+            "n8n_status": workflow_status.get("n8n_status", "demo_mode"),
+            "total_workflows": workflow_status.get("total_workflows", 0),
+            "webhook_base_url": workflow_status.get("webhook_base_url", "")
+        },
+        "last_check": datetime.utcnow().isoformat()
+    }
+
+@api_router.get("/calendar/status")
+async def get_calendar_status():
+    """Get detailed calendar service status"""
+    return await calendar_service.get_provider_status()
+
+@api_router.get("/notifications/status")
+async def get_notification_status():
+    """Get detailed notification service status"""
+    return await notification_service.get_provider_status()
+
+@api_router.get("/workflows/available")
+async def get_available_workflows():
+    """Get available n8n workflows"""
+    return await n8n_service.get_available_workflows()
+
+@api_router.get("/workflows/templates")
+async def get_workflow_templates():
+    """Get n8n workflow templates for import"""
+    return n8n_service.generate_n8n_import_templates()
+
+@api_router.get("/appointments/{appointment_id}")
+async def get_appointment_details(appointment_id: str):
+    """Get detailed appointment information"""
+    appointment = await enhanced_db.get_appointment(appointment_id)
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    return {
+        "appointment": appointment.dict(),
+        "customer": await enhanced_db.get_customer_by_phone(appointment.customer_info.get('phone', '')) if appointment.customer_info.get('phone') else None
+    }
+
+@api_router.get("/analytics/dashboard")
+async def get_dashboard_analytics(days: int = 30):
+    """Get analytics data for dashboard"""
+    
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+    
+    analytics_data = await enhanced_db.get_analytics_data(start_date, end_date)
+    
+    return {
+        "period_days": days,
+        "analytics": analytics_data,
+        "automation_summary": {
+            "calendar_integrations": ["Google Calendar", "Outlook", "CalDAV"],
+            "notification_channels": ["Email", "SMS", "WhatsApp"],
+            "workflow_types": ["Booking", "Reminders", "Follow-up", "Cancellation"]
+        }
+    }
+
 @api_router.get("/services", response_model=List[ServiceInfo])
 async def get_services():
     """Get available services"""
