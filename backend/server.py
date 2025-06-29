@@ -920,12 +920,44 @@ mistral_service = ai_service  # For backward compatibility
 async def startup_event():
     """Initialize services on startup"""
     logger.info("Starting MIND14 Virtual Front Desk API...")
-    await mistral_service.ensure_model_available()
+    await ai_service.initialize()
+    logger.info(f"AI service initialized with provider: {ai_service.provider}")
     logger.info("API startup completed")
 
 @api_router.get("/")
 async def root():
-    return {"message": "MIND14 Virtual Front Desk API", "version": "1.0.0"}
+    return {
+        "message": "MIND14 Virtual Front Desk API", 
+        "version": "1.0.0",
+        "ai_provider": ai_service.provider,
+        "ai_available": ai_service.provider != "fallback"
+    }
+
+@api_router.post("/admin/configure-ai")
+async def configure_ai_provider(provider: str, api_key: str = None, model: str = None):
+    """Configure AI provider (admin endpoint)"""
+    try:
+        ai_service.set_provider(provider, api_key, model)
+        await ai_service.initialize()
+        
+        return {
+            "status": "success",
+            "provider": ai_service.provider,
+            "message": f"AI provider set to {ai_service.provider}"
+        }
+    except Exception as e:
+        logger.error(f"Error configuring AI provider: {e}")
+        raise HTTPException(status_code=500, detail="Failed to configure AI provider")
+
+@api_router.get("/ai-status")
+async def get_ai_status():
+    """Get current AI service status"""
+    return {
+        "provider": ai_service.provider,
+        "model": ai_service.model_name,
+        "available": ai_service.provider != "fallback",
+        "ollama_available": ai_service.ollama_available if hasattr(ai_service, 'ollama_available') else False
+    }
 
 @api_router.get("/services", response_model=List[ServiceInfo])
 async def get_services():
